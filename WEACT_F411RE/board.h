@@ -303,38 +303,38 @@
 /*
  * GPIOA setup:
  * PA0  - GPIOA_KEY                 (input pullup).
- * PA1  - GPIOA_PIN1                   (input pullup).
- * PA2  - GPIOA_PIN2                   (input pullup).
- * PA3  - GPIOA_PIN3                   (input pullup).
- * PA4  - GPIOA_PIN4                   (input pullup).
- * PA5  - GPIOA_PIN5                   (input pullup).
- * PA6  - GPIOA_PIN6                   (input pullup).
- * PA7  - GPIOA_PIN7                   (input pullup).
- * PA8  - GPIOA_PIN8                   (input pullup).
- * PA9  - GPIOA_PIN9                   (input pullup).
- * PA10 - GPIOA_PIN10                  (input pullup).
+ * PA1  - GPIOA_PIN1                   (input analog).
+ * PA2  - GPIOA_PIN2                   (input analog).
+ * PA3  - GPIOA_PIN3                   (input analog).
+ * PA4  - GPIOA_PIN4                   (input analog).
+ * PA5  - GPIOA_PIN5                   (input analog).
+ * PA6  - GPIOA_PIN6                   (input analog).
+ * PA7  - GPIOA_PIN7                   (input analog).
+ * PA8  - GPIOA_PIN8                   (input analog).
+ * PA9  - GPIOA_PIN9                   (input analog).
+ * PA10 - GPIOA_PIN10                  (input analog).
  * PA11 - GPIOA_OTG_FS_DM           (alternate 10).
  * PA12 - GPIOA_OTG_FS_DP           (alternate 10).
  * PA13 - GPIOA_SWDIO               (alternate 0).
  * PA14 - GPIOA_SWCLK               (alternate 0).
- * PA15 - GPIOA_PIN15                  (input pullup).
+ * PA15 - GPIOA_PIN15                  (input analog).
  */
 #define VAL_GPIOA_MODER             (PIN_MODE_INPUT(GPIOA_KEY) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN1) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN2) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN3) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN4) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN5) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN6) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN7) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN8) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN9) |         \
-                                     PIN_MODE_INPUT(GPIOA_PIN10) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN1) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN2) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN3) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN4) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN5) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN6) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN7) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN8) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN9) |         \
+                                     PIN_MODE_ANALOG(GPIOA_PIN10) |         \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DM) |  \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DP) |  \
                                      PIN_MODE_ALTERNATE(GPIOA_SWDIO) |      \
                                      PIN_MODE_ALTERNATE(GPIOA_SWCLK) |      \
-                                     PIN_MODE_INPUT(GPIOI_PIN15))
+                                     PIN_MODE_ANALOG(GPIOI_PIN15))
 #define VAL_GPIOA_OTYPER            (PIN_OTYPE_PUSHPULL(GPIOA_KEY) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOA_PIN1) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOA_PIN2) |     \
@@ -422,39 +422,39 @@
 /*
  * GPIOB setup:
  *
- * PB0  - GPIOB_PIN0                   (input pullup).
- * PB1  - GPIOB_PIN1                   (input pullup).
- * PB2  - GPIOB_PIN2                   (input pullup).
- * PB3  - GPIOB_PIN3                   (input pullup).
- * PB4  - GPIOB_PIN4                   (input pullup).
- * PB5  - GPIOB_PIN5                   (input pullup).
- * PB6  - GPIOB_PIN6                   (input pullup).
- * PB7  - GPIOB_PIN7                   (input pullup).
- * PB8  - GPIOB_PIN8                   (input pullup).
- * PB9  - GPIOB_PIN9                   (input pullup).
- * PB10 - GPIOB_PIN10                  (input pullup).
- * PB11 - GPIOB_PIN11                  (input pullup).
- * PB12 - GPIOB_PIN12                  (input pullup).
- * PB13 - GPIOB_PIN13                  (input pullup).
- * PB14 - GPIOB_PIN14                  (input pullup).
- * PB15 - GPIOB_PIN15                  (input pullup).
+ * PB0  - GPIOB_PIN0                   (input analog).
+ * PB1  - GPIOB_PIN1                   (input analog).
+ * PB2  - GPIOB_PIN2                   (input analog).
+ * PB3  - GPIOB_PIN3                   (input analog).
+ * PB4  - GPIOB_PIN4                   (input analog).
+ * PB5  - GPIOB_PIN5                   (input analog).
+ * PB6  - GPIOB_PIN6                   (input analog).
+ * PB7  - GPIOB_PIN7                   (input analog).
+ * PB8  - GPIOB_PIN8                   (input analog).
+ * PB9  - GPIOB_PIN9                   (input analog).
+ * PB10 - GPIOB_PIN10                  (input analog).
+ * PB11 - GPIOB_PIN11                  (input analog).
+ * PB12 - GPIOB_PIN12                  (input analog).
+ * PB13 - GPIOB_PIN13                  (input analog).
+ * PB14 - GPIOB_PIN14                  (input analog).
+ * PB15 - GPIOB_PIN15                  (input analog).
  */
-#define VAL_GPIOB_MODER             (PIN_MODE_INPUT(GPIOB_PIN0) |         \
-                                     PIN_MODE_INPUT(GPIOB_PIN1) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN2) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN3) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN4) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN5) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN6) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN7) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN8) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN9) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN10) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN11) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN12) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN13) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN14) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN15))
+#define VAL_GPIOB_MODER             (PIN_MODE_ANALOG(GPIOB_PIN0) |         \
+                                     PIN_MODE_ANALOG(GPIOB_PIN1) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN2) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN3) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN4) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN5) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN6) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN7) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN8) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN9) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN10) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN11) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN12) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN13) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN14) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PIN15))
 #define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(GPIOB_PIN0) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN1) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN2) |     \
