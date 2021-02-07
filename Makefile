@@ -125,13 +125,13 @@ LDSCRIPT= $(STARTUPLD)/STM32F411xE.ld
 CSRC = $(ALLCSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/syscalls.c \
-       $(CONFDIR)/portab.c usbcfg.c \
        main.c
+#       $(CONFDIR)/portab.c usbcfg.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC) \
-         usbSource/serialUSB.cpp 
+CPPSRC = $(ALLCPPSRC)
+#         usbSource/serialUSB.cpp 
 
 # List ASM source files here.
 ASMSRC = $(ALLASMSRC)

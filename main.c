@@ -16,8 +16,8 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "portab.h"
-#include "usbcfg.h"
+//#include "portab.h"
+//#include "usbcfg.h"
 
 #define ttyUSB (BaseSequentialStream *)&PORTAB_SDU1
 void initSerialUSB(void);
@@ -32,9 +32,9 @@ static THD_FUNCTION(Thread1, arg) {
   chRegSetThreadName("blinker");
   while (true) {
     palClearPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(100);
     palSetPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1900);
   }
 }
 
@@ -59,13 +59,13 @@ int main(void) {
   /*
    * Initializes serial-over-USB CDC drivers.
    */
-  sduObjectInit(&SDU1);
-  sduStart(&SDU1, &serusbcfg);
+//  sduObjectInit(&SDU1);
+//  sduStart(&SDU1, &serusbcfg);
 
   /*
    * Activo USB
    */
-  initSerialUSB();
+//  initSerialUSB();
 
   /*
    * Creates the blinker thread.
