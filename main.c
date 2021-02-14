@@ -19,8 +19,9 @@
 //#include "portab.h"
 //#include "usbcfg.h"
 
-#define ttyUSB (BaseSequentialStream *)&PORTAB_SDU1
-void initSerialUSB(void);
+//#define ttyUSB (BaseSequentialStream *)&PORTAB_SDU1
+//void initSerialUSB(void);
+void pruebaADC(void);
 
 /*
  * Green LED blinker thread, times are in milliseconds.
@@ -79,6 +80,7 @@ int main(void) {
   while (true) {
     if (!palReadPad(GPIOA, GPIOA_KEY)) {
         chThdSleepMilliseconds(500);
+        pruebaADC();
     }
     chThdSleepMilliseconds(500);
   }

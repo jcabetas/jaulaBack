@@ -130,7 +130,8 @@ CSRC = $(ALLCSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC)
+CPPSRC = $(ALLCPPSRC) \
+         ADC/adcUtils.cpp
 #         usbSource/serialUSB.cpp 
 
 # List ASM source files here.
@@ -157,13 +158,13 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DCHPRINTF_USE_FLOAT=TRUE
 
 # Define ASM defines here
 UADEFS =
 
 # List all user directories here
-UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg
+UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg ADC
 
 # List the user directory to look for the libraries here
 ULIBDIR =
