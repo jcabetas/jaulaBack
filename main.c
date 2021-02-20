@@ -16,13 +16,18 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "varsFlash.h"
+
 //#include "portab.h"
 //#include "usbcfg.h"
 
 //#define ttyUSB (BaseSequentialStream *)&PORTAB_SDU1
 //void initSerialUSB(void);
 void pruebaADC(void);
-
+void initW25q16(void);
+int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor);
+int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor);
+uint16_t sectorNumTelef;
 /*
  * Green LED blinker thread, times are in milliseconds.
  */
@@ -33,9 +38,9 @@ static THD_FUNCTION(Thread1, arg) {
   chRegSetThreadName("blinker");
   while (true) {
     palClearPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(100);
+    chThdSleepMilliseconds(1000);
     palSetPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(1900);
+    chThdSleepMilliseconds(1000);
   }
 }
 
@@ -43,7 +48,7 @@ static THD_FUNCTION(Thread1, arg) {
  * Application entry point.
  */
 int main(void) {
-
+    char numTlf[50];
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -67,11 +72,16 @@ int main(void) {
    * Activo USB
    */
 //  initSerialUSB();
-
+  initW25q16();
   /*
    * Creates the blinker thread.
    */
+
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+
+  sectorNumTelef = 1;
+//  escribeStr50_C(&sectorNumTelef, "numTelef", "619262851");
+  leeStr50_C(&sectorNumTelef, "numTelef", "000000", numTlf);
 
   /*
    * Normal main() thread activity, in this demo it does nothing except

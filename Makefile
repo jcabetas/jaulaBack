@@ -131,7 +131,8 @@ CSRC = $(ALLCSRC) \
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CPPSRC = $(ALLCPPSRC) \
-         ADC/adcUtils.cpp
+         ADC/adcUtils.cpp \
+         w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/varsFlash.cpp w25q16/volcarFlash.cpp \
 #         usbSource/serialUSB.cpp 
 
 # List ASM source files here.
@@ -164,7 +165,7 @@ UDEFS = -DCHPRINTF_USE_FLOAT=TRUE
 UADEFS =
 
 # List all user directories here
-UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg ADC
+UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg ADC w25q16
 
 # List the user directory to look for the libraries here
 ULIBDIR =
