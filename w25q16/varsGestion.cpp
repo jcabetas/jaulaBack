@@ -16,8 +16,8 @@ using namespace chibios_rt;
 
 extern "C" {
     void initW25q16(void);
-    int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor);
-    int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor);
+//    int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor);
+//    int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor);
 }
 #define tty2 (BaseSequentialStream *)&SD2
 
@@ -535,16 +535,16 @@ int16_t leeStr50(uint16_t *sectorParam, const char *nombParam, const char *valor
     return 0;
 }
 
-int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor)
-{
-    return escribeStr50(sectorParam, nombVar, valor);
-}
-
-int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor)
-{
-    return leeStr50(sectorParam, nombParam, valorDefault, valor);
-
-}
+//int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor)
+//{
+//    return escribeStr50(sectorParam, nombVar, valor);
+//}
+//
+//int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor)
+//{
+//    return leeStr50(sectorParam, nombParam, valorDefault, valor);
+//
+//}
 /*
  * Maximum speed SPI configuration (27MHz -BR0==Fpclk/4-, CPHA=0, CPOL=0, MSb first).
   * Low speed SPI configuration (421.875kHz, CPHA=0, CPOL=0, MSb first).
