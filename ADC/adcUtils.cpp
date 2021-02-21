@@ -78,14 +78,14 @@ float hallaCapBat(float *vBat)
 {
     if (*vBat<=lipoVoltCharge[0])
         return 0.0f;
-    if (*vBat>=lipoVoltCharge[sizeof(lipoVoltCharge)-1])
+    if (*vBat>=lipoVoltCharge[20])
         return 100.0f;
     // miro en que rango se encuentra
     for (uint8_t n=1;n<sizeof(lipoVoltCharge);n++)
         if (*vBat<=lipoVoltCharge[n])
         {
             // se encuentra entre n-1 y n. Los escalones de carga son del 5%
-            float result = lipoVoltCharge[n-1]+5.0f*(lipoVoltCharge[n]-*vBat)/(lipoVoltCharge[n]-lipoVoltCharge[n-1]);
+            float result = (n-1)*5.0f+5.0f*(lipoVoltCharge[n]-*vBat)/(lipoVoltCharge[n]-lipoVoltCharge[n-1]);
             return result;
         }
     return 999.9f; //
@@ -100,7 +100,7 @@ void pruebaADC(void)
     leeTension(&vBat);
     adcStop(&ADCD1);
     float porcBat = hallaCapBat(&vBat);
-    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%.0f%%)\r\n",vBat,porcBat);
+    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)\r\n",vBat,(int16_t) porcBat);
 }
 
 

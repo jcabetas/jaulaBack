@@ -224,7 +224,7 @@ void sms::procesaOrden(char *orden, uint8_t *error)
     // siempre enviamos datos
     leeTension(&vBat);
     capBat = hallaCapBat(&vBat);
-    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%.1f%%)",vBat,capBat);
+    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)",vBat,(int16_t)capBat);
     addMsgRespuesta(buff);
     puntOrden = trimall(orden);
     strncpy(bufferOrden,puntOrden,sizeof(bufferOrden));
