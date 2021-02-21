@@ -26,7 +26,10 @@
 void pruebaADC(void);
 void initW25q16(void);
 void initSMS(void);
+void initSensores(void);
 
+extern event_source_t jaulaint_event;
+extern uint8_t estadoJaula;
 
 /*
  * Green LED blinker thread, times are in milliseconds.
@@ -40,7 +43,10 @@ static THD_FUNCTION(Thread1, arg) {
     palClearPad(GPIOC, GPIOC_LED);
     chThdSleepMilliseconds(100);
     palSetPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(1900);
+    if (estadoJaula==1)
+        chThdSleepMilliseconds(100);
+    else
+        chThdSleepMilliseconds(1900);
   }
 }
 
@@ -58,6 +64,8 @@ int main(void) {
   halInit();
   chSysInit();
 
+  chEvtObjectInit(&jaulaint_event);
+
   /*
    * Activates the serial driver 2 using the driver default configuration.
    */
@@ -71,8 +79,9 @@ int main(void) {
    * Activo USB
    */
 //  initSerialUSB();
+  initSensores();
   initW25q16();
-  initSMS();
+//  initSMS();
   /*
    * Creates the blinker thread.
    */

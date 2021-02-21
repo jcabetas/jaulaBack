@@ -27,33 +27,12 @@ using namespace chibios_rt;
 #include "gets.h"
 #include "chprintf.h"
 #include "ctype.h"
-
 #include "sms.h"
 
+void leeTension(float *vBat);
+float hallaCapBat(float *vBat);
 
-uint8_t quitarAbuso(uint8_t numEstacion);
-
-extern float  kW;
-extern float frecuencia, presion;
-extern uint16_t estadoVariador;
-extern mutex_t MtxMedidas;
-extern int16_t errorEnergia2, errorVariador2;
-
-extern uint8_t hayQueLeerID;
-extern int16_t errorID;
-extern uint16_t numID;
-extern uint16_t valorID;
-
-
-extern uint8_t fs_ready;
-extern uint8_t numTelef[16];
 extern event_source_t enviarSMS_source;
-
-extern char pendienteSMS[200];
-extern char telefonoEnvio[16];
-
-static uint8_t enviarSMS; // 0: no hay nada, 1: hay mensaje para enviar, 2: bloqueado porque habia sin enviar
-
 
 
 void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam)
@@ -96,31 +75,15 @@ char *trimall(char *str)
 }
 
 
-/**
- * @brief Anexa respuestas a enviar
- *
- * @param mensaje Mensaje a anexar
- *
- */
-
-//void enviaTexto(const char *mensaje)
-//{
-//    if (mensaje[0]==0) return;
-//    if (strlen(pendienteSMS)+strlen(mensaje)>sizeof(pendienteSMS)) return;
-//    if (!mensaje[0] && strlen(pendienteSMS)<sizeof(pendienteSMS)-3) strncat(pendienteSMS,"; ",sizeof(pendienteSMS)-1);
-//    strncat(pendienteSMS,mensaje,sizeof(pendienteSMS)-1);
-//    if (enviarSMS!=2)
-//        enviarSMS = 1;
-//}
 
 void sms::procesaOrdenAsignacion(char *orden, char *puntSimbIgual)
 {
-    char buff[50], *puntAjuste, *puntValor;
+    char buff[50], *puntValor;
     int32_t error;
     uint32_t valor;
     // orden de asignacion
     *puntSimbIgual = (char) 0;
-    puntAjuste = trimall(orden);
+    trimall(orden);
     puntValor = trimall(puntSimbIgual+1);
     //
     if (!strcasecmp(puntValor,"si")||!strcasecmp(puntValor,"on"))
@@ -141,40 +104,8 @@ void sms::procesaOrdenAsignacion(char *orden, char *puntSimbIgual)
             return;
         }
     }
-
-    if (!strncasecmp(puntAjuste,"bloqueoAbusones",strlen(puntAjuste)))
-    {
-        if (valor>1)
-        {
-            chsnprintf(buff,sizeof(buff),"Valor incorrecto bloqueoAbusones (%s)",puntValor);
-            addMsgRespuesta(buff);
-            return;
-        }
-        //bloqueoAbusones.setVal(valor);
-        //bloqueoAbusones.escribeFlash();
-    }
-    if (!strncasecmp(puntAjuste,"desbloquea",strlen(puntAjuste)))
-    {
-//        if (modopozo.getValorNum()!=2)
-//        {
-//            chsnprintf(buff,sizeof(buff),"No soy el pozo. No puedo desbloquear\n",puntValor);
-//            addMsgRespuesta(buff);
-//            return;
-//        }
-        if (valor==0 || valor>8)
-        {
-            chsnprintf(buff,sizeof(buff),"Numero incorrecto de estacion en desbloquea",puntValor);
-            addMsgRespuesta(buff);
-            return;
-        }
- // OJO CORREGIR       radio::quitarAbuso(valor);
-    }
 }
 
-
-void sms::ponStatusHistorico(void)
-{
-}
 
 
 /**
@@ -187,7 +118,7 @@ void sms::procesaStatusYAlgo(char *algo)
     // me piden un parametroFlash?
     if (!strncasecmp(algo,"historico",strlen(algo)))
     {
-        ponStatusHistorico();
+        //ponStatusHistorico();
         return;
     }
     if (!strncasecmp(algo,"tensiones",strlen(algo)))
@@ -198,27 +129,15 @@ void sms::procesaStatusYAlgo(char *algo)
 }
 
 
-/*
- *         if (hayQueLeerID)
-            valorID = leeSDMHex(idModbusVariador.getValorNum(), 4,  numID, &errorID);
-            hayQueLeerID = 0;
- */
-
-void sms::procesaID(char *)
-{
-
-}
 
 /**
  * @brief Procesa status general
  *
  */
 
-
-char statusResu[90];
-
 void sms::procesaStatus(void)
 {
+
 //    char binStr[10];
 //    extern uint8_t estadoAbusones;
 //    extern uint8_t estadoLlamaciones, estadoActivos;
@@ -289,63 +208,6 @@ void sms::procesaStatus(void)
 }
 
 
-void procesaStatusOld(void)
-{
-    //	float PVE;
-    //	char *strErr;
-    //	uint8_t errorVE;
-    //  chsnprintf(statusResu,sizeof(statusResu),"%s",estadoCoche[statusCarga]);
-    //  enviaTexto(statusResu);
-    //  if (statusCarga==CARGADO)
-    //  {
-    //      chsnprintf(statusResu,sizeof(statusResu),"\nFin de carga %02d:%02d\nkWh punta %5.2f kWh valle %5.2f",
-    //                 horaFinCarga, minHoraCarga, kWhVEp, kWhVEv);
-    //      enviaTexto(statusResu);
-    //  }
-    //  if (statusCarga==CARGANDO_BULK || statusCarga==CARGANDO_BULK_BAJITO)
-    //  {
-    //    // medidas[WB*5+0] => PVE[WB]
-    //    PVE = getValorMedControl(MED_PVE_MAS1(numCargador), &errorVE);
-    //    strErr=" ";
-    //    if (errorVE)
-    //    	strErr = "(Error) ";
-    //    chsnprintf(statusResu,sizeof(statusResu),"\n%5d W %s%5.1f kWh",PVE, strErr, kWhVEt);
-    //    enviaTexto(statusResu);
-    //  }
-    //  if (statusCarga==ESPERANDOVALLE)
-    //  {
-    //    chsnprintf(statusResu,sizeof(statusResu),"\nCargara a las %2dh",horaValle);
-    //    enviaTexto(statusResu);
-    //  }
-}
-
-void procesaAlarmas(uint8_t reconoce)
-{
-    (void) reconoce;
-    //  uint8_t i, primeraAlarma = 1, esActiva;
-    //  for (i=0;i<sizeof(alarmaActiva);i++)
-    //  {
-    //    chMtxLock(&MtxHayAlarma);
-    //    if (alarmaActiva[i] && !alarmaReconocida[i])
-    //      esActiva = 1;
-    //    else
-    //      esActiva = 0;
-    //    chMtxUnlock(&MtxHayAlarma);
-    //    if (!esActiva)
-    //      continue;
-    //    if (primeraAlarma)
-    //      enviaTexto("Alarmas:");
-    //    primeraAlarma = 0;
-    //    enviaTexto(textoAlarmas[i]);
-    //    if (reconoce)
-    //    {
-    //      chMtxLock(&MtxHayAlarma);
-    //      alarmaReconocida[i] = 1;
-    //      chMtxUnlock(&MtxHayAlarma);
-    //    }
-    //  }
-}
-
 /**
  * @brief Procesa una orden
  *
@@ -355,8 +217,15 @@ void procesaAlarmas(uint8_t reconoce)
 char bufferOrden[40];
 void sms::procesaOrden(char *orden, uint8_t *error)
 {
-    char *puntSimb, *puntValor, *puntOrden;
+    char *puntSimb, *puntValor, *puntOrden, buff[20];
+    float vBat, capBat;
 
+    msgRespuesta[0] = 0;
+    // siempre enviamos datos
+    leeTension(&vBat);
+    capBat = hallaCapBat(&vBat);
+    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%.1f%%)",vBat,capBat);
+    addMsgRespuesta(buff);
     puntOrden = trimall(orden);
     strncpy(bufferOrden,puntOrden,sizeof(bufferOrden));
     puntSimb = strchr(bufferOrden,' ');
@@ -371,30 +240,10 @@ void sms::procesaOrden(char *orden, uint8_t *error)
             procesaStatusYAlgo(puntValor);
             return;
         }
-        procesaAlarmas(0);
         procesaStatus();
         return;
     }
-    if (!strncasecmp(bufferOrden,"id",strlen(bufferOrden)))
-    {
-        if (puntSimb == NULL)
-        {
-            addMsgRespuesta("pon numero ID\n");
-            return;
-        }
-        puntValor = trimall(puntSimb+1);
-        procesaID(puntValor);
-        procesaAlarmas(0);
-        procesaStatus();
-        return;
-    }
-
-    if (!strncasecmp(puntOrden,"reconoce",strlen(puntOrden)))
-    {
-        procesaAlarmas(1);
-        return;
-    }
-    // �contiene = � : ?
+    // contiene = : ?
     puntSimb = strchr(orden,'=');
     if (puntSimb==NULL)
         puntSimb = strchr(orden,':');
@@ -423,10 +272,7 @@ void sms::interpretaSMS(uint8_t *textoSMS)
     uint16_t numOrdenes, i;
     uint8_t error;
 
-    enviarSMS = 0;
     borraMsgRespuesta();
-//    if (msgRespuesta[0])
-//        enviarSMS = 2; // si hay mensajes pendientes, bloqueo envio
 
     // compruebo que no hay caracteres raros
     for (i=0;i<strlen((char *)textoSMS);i++)
@@ -435,7 +281,7 @@ void sms::interpretaSMS(uint8_t *textoSMS)
             return;
         }
     // divido ordenes
-    enviarSMS = 0;
+
     error = 0;
     parseStr((char *)textoSMS,ordenes,",.;",&numOrdenes);
     for (i=0;i<numOrdenes;i++)

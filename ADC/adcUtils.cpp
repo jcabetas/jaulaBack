@@ -11,6 +11,11 @@ extern "C"
     void pruebaADC(void);
 }
 
+//                       0%   5%     10%    15%   20%    25%     30%    35%   40%    45%    50%
+float lipoVoltCharge[]={3.3f,  3.50f, 3.69f, 3.71f, 3.73f, 3.75f, 3.77f, 3.79f, 3.8f, 3.82f, 3.84f,\
+                        3.85f, 3.87f, 3.91f, 3.95f, 3.98f, 4.02f, 4.08f, 4.11f, 4.15f, 4.20f };
+//                       55%    60%    65%   70%     75%    80%    85%    90%   95%     100%
+
 /*
  * La tension se lee en PA7 (ADC7), a traves de divisor con factor 0,69894
  *   El fondo de escala es 4096 corresponde a 3.3 V
@@ -19,8 +24,8 @@ extern "C"
  *   => T = 25 + (V - 0,76)/0.025
  */
 
-#define ADC_GRP1_NUM_CHANNELS   2
-#define ADC_GRP1_BUF_DEPTH      8
+#define ADC_GRP1_NUM_CHANNELS   1
+#define ADC_GRP1_BUF_DEPTH      4
 
 // Create buffer to store ADC results. This is
 // one-dimensional interleaved array
@@ -51,35 +56,51 @@ static const ADCConversionGroup adcgrpcfg1 = {
   0,                        /* LTR */
   0,                        /* SQR1 */
   0,  /* SQR2 */
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN7) | ADC_SQR3_SQ2_N(ADC_CHANNEL_SENSOR)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN7)
 };
 
 
 
 
-/* Lee tensiones */
-void leeTensiones(float *vBat, float *T)
+/* Lee tension */
+void leeTension(float *vBat)
 {
 	adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
-	*vBat = samples_buf[0]*0.001157584f;
-	uint16_t TS_CAL1 = *(volatile uint16_t*)0x1FFF7A2C; //  943 @30C
-    uint16_t TS_CAL2 = *(volatile uint16_t*)0x1FFF7A2E; // 1209 @110C
-    *T = 30.0f + 80.0f*(samples_buf[1]-TS_CAL1)/(TS_CAL2 - TS_CAL1);
+	// promedia
+	adcsample_t media = 0;
+	for (uint8_t n=0;n<ADC_GRP1_BUF_DEPTH;n++)
+	    media += samples_buf[n];
+	media /= ADC_GRP1_BUF_DEPTH;
+	*vBat = media*0.001157584f;
 }
 
-
+float hallaCapBat(float *vBat)
+{
+    if (*vBat<=lipoVoltCharge[0])
+        return 0.0f;
+    if (*vBat>=lipoVoltCharge[sizeof(lipoVoltCharge)-1])
+        return 100.0f;
+    // miro en que rango se encuentra
+    for (uint8_t n=1;n<sizeof(lipoVoltCharge);n++)
+        if (*vBat<=lipoVoltCharge[n])
+        {
+            // se encuentra entre n-1 y n. Los escalones de carga son del 5%
+            float result = lipoVoltCharge[n-1]+5.0f*(lipoVoltCharge[n]-*vBat)/(lipoVoltCharge[n]-lipoVoltCharge[n-1]);
+            return result;
+        }
+    return 999.9f; //
+}
 
 void pruebaADC(void)
 {
     char buff[30];
-    float vBat,temp;
+    float vBat;
     palSetPadMode(GPIOA, 7, PAL_MODE_INPUT_ANALOG); // this is 7th channel
     adcStart(&ADCD1,NULL);
-    adcSTM32EnableTSVREFE();
-    leeTensiones(&vBat,&temp);
+    leeTension(&vBat);
     adcStop(&ADCD1);
-    adcSTM32DisableTSVREFE();
-    chsnprintf(buff,sizeof(buff),"Vbat:%.3f T:%.1f C\r\n",vBat,temp);
+    float porcBat = hallaCapBat(&vBat);
+    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%.0f%%)\r\n",vBat,porcBat);
 }
 
 

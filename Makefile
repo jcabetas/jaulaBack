@@ -134,7 +134,7 @@ CPPSRC = $(ALLCPPSRC) \
          ADC/adcUtils.cpp \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
          SMS/sms.cpp SMS/manejaAT.cpp SMS/sim800.cpp  SMS/procesaOrden.cpp SMS/threadSMS.cpp \
-         tty/gets.cpp calendar/calendar.cpp heap.cpp
+         tty/gets.cpp calendar/calendar.cpp heap.cpp sensores.cpp
 #         usbSource/serialUSB.cpp w25q16/varsFlash.cpp
 
 # List ASM source files here.
