@@ -83,7 +83,6 @@ int8_t sms::init(void)
 }
 
 
-
 void sms::borraMsgRespuesta(void)
 {
     msgRespuesta[0] = '\0';
@@ -94,12 +93,18 @@ void sms::borraMsgRespuesta(void)
 void sms::addMsgRespuesta(const char *texto)
 {
     if (msgRespuesta[0])
-        strncat(msgRespuesta,".",strlen(msgRespuesta)-1);
-    strncat(msgRespuesta,texto,strlen(msgRespuesta)-1);
+        strncat(msgRespuesta,". ",sizeof(msgRespuesta)-1);
+    strncat(msgRespuesta,texto,sizeof(msgRespuesta)-1);
 }
 
 void initSMS(void)
 {
+    char buffTest[50];
     smsModem = new sms("619262851","");
     smsModem->init();
+    chThdSleepMilliseconds(2000);
+    strcpy(buffTest,"status");
+    smsModem->interpretaSMS((uint8_t *)buffTest);
+    strcpy(buffTest,"telefono=696994822");
+    smsModem->interpretaSMS((uint8_t *)buffTest);
 }

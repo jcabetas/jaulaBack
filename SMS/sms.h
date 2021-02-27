@@ -38,6 +38,7 @@ private:
     char msgRespuesta[200];
     char telefonoRecibido[16];
     char telefonoEnvio[16];
+    uint8_t estadoPuesto;
     mutex_t MtxEspSim800SMS;
     uint8_t horaSMStoTM(uint8_t *cadena, struct tm *fecha);
     void procesaOrdenAsignacion(char *orden, char *puntSimbIgual);
@@ -77,6 +78,7 @@ public:
     void leoSmsCMTI(BaseSequentialStream  *pSD);
     void borraMsgRespuesta(void);
     void addMsgRespuesta(const char *texto);
+    void ponEstado(void);
     void procesaOrden(char *orden, uint8_t *error);
 };
 

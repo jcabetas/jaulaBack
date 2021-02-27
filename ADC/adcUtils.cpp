@@ -9,6 +9,7 @@ using namespace chibios_rt;
 extern "C"
 {
     void pruebaADC(void);
+    void initAdc(void);
 }
 
 //                       0%   5%     10%    15%   20%    25%     30%    35%   40%    45%    50%
@@ -51,12 +52,12 @@ static const ADCConversionGroup adcgrpcfg1 = {
   0,                        /* CR1 */
   ADC_CR2_SWSTART,          /* CR2 */
   0,                        /* SMPR1 */
-  ADC_SMPR2_SMP_AN7(ADC_SAMPLE_480), /* SMPR2 */
+  ADC_SMPR2_SMP_AN9(ADC_SAMPLE_480), /* SMPR2 */
   0,                        /* HTR */
   0,                        /* LTR */
   0,                        /* SQR1 */
   0,  /* SQR2 */
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN7)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN9)
 };
 
 
@@ -65,7 +66,9 @@ static const ADCConversionGroup adcgrpcfg1 = {
 /* Lee tension */
 void leeTension(float *vBat)
 {
+    adcStart(&ADCD1,NULL);
 	adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
+    adcStop(&ADCD1);
 	// promedia
 	adcsample_t media = 0;
 	for (uint8_t n=0;n<ADC_GRP1_BUF_DEPTH;n++)
@@ -95,13 +98,13 @@ void pruebaADC(void)
 {
     char buff[30];
     float vBat;
-    palSetPadMode(GPIOA, 7, PAL_MODE_INPUT_ANALOG); // this is 7th channel
-    adcStart(&ADCD1,NULL);
     leeTension(&vBat);
-    adcStop(&ADCD1);
     float porcBat = hallaCapBat(&vBat);
     chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)\r\n",vBat,(int16_t) porcBat);
 }
 
-
+void initAdc(void)
+{
+    palSetPadMode(GPIOB, GPIOB_VBAT, PAL_MODE_INPUT_ANALOG); // B1 medida de bateria
+}
 

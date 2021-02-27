@@ -28,12 +28,13 @@ using namespace chibios_rt;
 #include "chprintf.h"
 #include "ctype.h"
 #include "sms.h"
+#include "varsFlash.h"
 
 void leeTension(float *vBat);
 float hallaCapBat(float *vBat);
 
 extern event_source_t enviarSMS_source;
-
+extern uint8_t estadoJaulaClosed, estadoJaulaOpened;
 
 void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam)
 {
@@ -79,30 +80,39 @@ char *trimall(char *str)
 void sms::procesaOrdenAsignacion(char *orden, char *puntSimbIgual)
 {
     char buff[50], *puntValor;
-    int32_t error;
-    uint32_t valor;
+    int32_t err;
     // orden de asignacion
     *puntSimbIgual = (char) 0;
     trimall(orden);
     puntValor = trimall(puntSimbIgual+1);
     //
-    if (!strcasecmp(puntValor,"si")||!strcasecmp(puntValor,"on"))
-        valor = 1;
-    else if  (!strcasecmp(puntValor,"1") || puntValor[0]=='s' || puntValor[0]=='S')
-        valor = 1;
-    else if  (!strcasecmp(puntValor,"0") || !strcasecmp(puntValor,"no")||!strcasecmp(puntValor,"off"))
-        valor = 0;
-    else if  (!strcasecmp(puntValor,"2") || !strcasecmp(puntValor,"auto"))
-        valor = 2;
-    else
+    if (!strcasecmp(orden,"telefono"))
     {
-        error = Str2Int((uint8_t *) (puntValor), &valor);
-        if (error!=0)
+        ponEstado();
+        uint16_t sectorNumTelef = SECTORNUMTELEF;
+        err = escribeStr50(&sectorNumTelef, "numTelef", puntValor);
+        if (err==0)
         {
-            chsnprintf(buff,sizeof(buff),"Valor incorrecto (%s)",puntValor);
+            chsnprintf(buff,sizeof(buff),"Telefono envio:%s\n",puntValor);
             addMsgRespuesta(buff);
-            return;
         }
+        else
+            addMsgRespuesta("Error al grabar num. telef.!!");
+        return;
+    }
+    if (!strcasecmp(orden,"pin"))
+    {
+        ponEstado();
+        uint16_t sectorPin = SECTORPIN;
+        err = escribeStr50(&sectorPin, "numPin", puntValor);
+        if (err==0)
+        {
+            chsnprintf(buff,sizeof(buff),"pin:%s\n",puntValor);
+            addMsgRespuesta(buff);
+        }
+        else
+            addMsgRespuesta("Error al grabar pin!!");
+        return;
     }
 }
 
@@ -114,18 +124,19 @@ void sms::procesaOrdenAsignacion(char *orden, char *puntSimbIgual)
  */
 void sms::procesaStatusYAlgo(char *algo)
 {
-   // char buff[50],valor[30];
-    // me piden un parametroFlash?
-    if (!strncasecmp(algo,"historico",strlen(algo)))
-    {
-        //ponStatusHistorico();
-        return;
-    }
-    if (!strncasecmp(algo,"tensiones",strlen(algo)))
-    {
-        //        ponStatusSMSAlimentacion();
-        return;
-    }
+    (void) algo;
+//   // char buff[50],valor[30];
+//    // me piden un parametroFlash?
+//    if (!strncasecmp(algo,"historico",strlen(algo)))
+//    {
+//        //ponStatusHistorico();
+//        return;
+//    }
+//    if (!strncasecmp(algo,"tensiones",strlen(algo)))
+//    {
+//        //        ponStatusSMSAlimentacion();
+//        return;
+//    }
 }
 
 
@@ -208,6 +219,30 @@ void sms::procesaStatus(void)
 }
 
 
+
+void sms::ponEstado(void)
+{
+    char buff[30];
+    float vBat, capBat;
+    if (estadoPuesto)
+        return;
+    if (estadoJaulaClosed && !estadoJaulaOpened)
+        addMsgRespuesta("Jaula cerrada");
+    else if (!estadoJaulaClosed && estadoJaulaOpened)
+        addMsgRespuesta("Jaula abierta");
+    else if (!estadoJaulaClosed && !estadoJaulaOpened)
+        addMsgRespuesta("Estado jaula desconocido");
+    else
+        addMsgRespuesta("Error en estado sensores de jaula");
+
+    leeTension(&vBat);
+    capBat = hallaCapBat(&vBat);
+    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)",vBat,(int16_t)capBat);
+    addMsgRespuesta(buff);
+    estadoPuesto = 1;
+}
+
+
 /**
  * @brief Procesa una orden
  *
@@ -217,15 +252,8 @@ void sms::procesaStatus(void)
 char bufferOrden[40];
 void sms::procesaOrden(char *orden, uint8_t *error)
 {
-    char *puntSimb, *puntValor, *puntOrden, buff[20];
-    float vBat, capBat;
+    char *puntSimb, *puntValor, *puntOrden;
 
-    msgRespuesta[0] = 0;
-    // siempre enviamos datos
-    leeTension(&vBat);
-    capBat = hallaCapBat(&vBat);
-    chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)",vBat,(int16_t)capBat);
-    addMsgRespuesta(buff);
     puntOrden = trimall(orden);
     strncpy(bufferOrden,puntOrden,sizeof(bufferOrden));
     puntSimb = strchr(bufferOrden,' ');
@@ -234,6 +262,7 @@ void sms::procesaOrden(char *orden, uint8_t *error)
 
     if (!strncasecmp(bufferOrden,"status",strlen(bufferOrden)))
     {
+        ponEstado();
         if (puntSimb != NULL)
         {
             puntValor = trimall(puntSimb+1);
@@ -272,8 +301,8 @@ void sms::interpretaSMS(uint8_t *textoSMS)
     uint16_t numOrdenes, i;
     uint8_t error;
 
-    borraMsgRespuesta();
-
+    msgRespuesta[0] = 0;
+    estadoPuesto = 0;
     // compruebo que no hay caracteres raros
     for (i=0;i<strlen((char *)textoSMS);i++)
         if (!isprint((int) textoSMS[i]))

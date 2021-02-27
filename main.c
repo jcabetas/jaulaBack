@@ -27,26 +27,38 @@ void pruebaADC(void);
 void initW25q16(void);
 void initSMS(void);
 void initSensores(void);
+void initAdc(void);
 
-extern event_source_t jaulaint_event;
-extern uint8_t estadoJaula;
+enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
+extern enum estado_t estado;
 
 /*
  * Green LED blinker thread, times are in milliseconds.
  */
 static THD_WORKING_AREA(waThread1, 128);
 static THD_FUNCTION(Thread1, arg) {
-
   (void)arg;
+  // numPulsos, interv. Por ejemplo 2,700 seria 100on,200off,100on,700off
+  //enum estado_t {esperoApertura, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
+  //                  1,100             2,500            1,2900       1,100        3,500       2,2600      3,2300
+  uint16_t numPulsos[] =     {  1,  1,  2,  1,   1,  3,   2,  3};
+  uint16_t msEntrePulsos[] = {100,100,500,2900,100,500,2900,2900};
   chRegSetThreadName("blinker");
   while (true) {
-    palClearPad(GPIOC, GPIOC_LED);
-    chThdSleepMilliseconds(100);
-    palSetPad(GPIOC, GPIOC_LED);
-    if (estadoJaula==1)
-        chThdSleepMilliseconds(100);
-    else
-        chThdSleepMilliseconds(1900);
+      uint8_t estJaula = estado;
+      if (estJaula>7)
+          estJaula = 0;
+      uint16_t numPuls = numPulsos[estJaula];
+      uint16_t msEntrePuls = msEntrePulsos[estJaula];
+      for (uint8_t numP=0;numP<numPuls;numP++)
+      {
+          palClearPad(GPIOC, GPIOC_LED); // enciende
+          chThdSleepMilliseconds(100);   // mantiene 100 ms
+          palSetPad(GPIOC, GPIOC_LED);   // apagado
+          if (numP<numPuls-1)            // si no es el ultimo, deja apagado 200 ms
+              chThdSleepMilliseconds(200);
+      }
+      chThdSleepMilliseconds(msEntrePuls);
   }
 }
 
@@ -64,7 +76,6 @@ int main(void) {
   halInit();
   chSysInit();
 
-  chEvtObjectInit(&jaulaint_event);
 
   /*
    * Activates the serial driver 2 using the driver default configuration.
@@ -79,9 +90,10 @@ int main(void) {
    * Activo USB
    */
 //  initSerialUSB();
+  initAdc();
   initSensores();
   initW25q16();
-//  initSMS();
+  initSMS();
   /*
    * Creates the blinker thread.
    */
@@ -99,7 +111,7 @@ int main(void) {
   while (true) {
     if (!palReadPad(GPIOA, GPIOA_KEY)) {
         chThdSleepMilliseconds(500);
-        pruebaADC();
+        //pruebaADC();
     }
     chThdSleepMilliseconds(500);
   }

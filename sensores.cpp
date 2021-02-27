@@ -15,52 +15,149 @@ extern "C"
     void initSensores(void);
 }
 
+/*
+ * Sensores: jaulaOpened y jaulaClosed (1 estado activo)
+ * Maquina de estados:
+ * - esperoApertura: estado inicial, debo esperar a jaulaOpened && !jaulaClosed
+ * - abiertoTemporizando: durante 5s, si hay cambios vuelvo a esperoApertura
+ * - esperoGato: la jaula esta abierta, espero durmiendo a !jaulaOpened
+ * - cayendoPuerta: lanzo temporizador 5s y espero a jaulaClosed.
+ *   Si no se ha activado jaulaClosed, lanzar alarma y pasa a atascada
+ *   Si jaulaOpen & !jaulaClosed, debio ser un mal contacto y volver a esperoGato
+ *   Si jaulaClosed, pasa a gatoEnJaula
+ * - atascada: si jaulaClosed, lanza alarma de mal cierre y pasa a avisando
+ * - gatoEnJaula: lanza aviso de cierre y pasa a avisado
+ * - avisado: duerme
+ */
+
+
+enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
+
 thread_t *procesoSensor;
 event_source_t jaulaint_event;
-event_listener_t elJaula;
-uint8_t estadoJaula, estadoEnableEventJaula;
-
-static virtual_timer_t antiRebote_vt;
-static void jaula_cb(void *arg);
+event_listener_t elJaulaChanged;
+uint8_t estadoJaulaClosed, estadoJaulaOpened, estadoEnableEventJaula;
+enum estado_t estado;
 
 
+static virtual_timer_t antiRebote_vt, tempApertura_vt, tempCayendo_vt;
+static void jaulaChanged_cb(void *arg);
+
+
+uint8_t actualizaEstados(void)
+{
+    uint8_t estOpen, estClose, hayCambios;
+    hayCambios = 0;
+    estClose = palReadPad(GPIOA, GPIOA_JAULACLOSED);
+    if (estClose!=estadoJaulaClosed)
+    {
+        estadoJaulaClosed = estClose;
+        hayCambios = 1;
+    }
+    estOpen = palReadPad(GPIOA, GPIOA_JAULAOPENED);
+    if (estOpen!=estadoJaulaOpened)
+    {
+        estadoJaulaOpened = estOpen;
+        hayCambios = 1;
+    }
+    return hayCambios;
+}
+
+static void tempOffCayendo_cb(void *arg)
+{
+    (void)arg;
+    chSysLockFromISR();
+    chEvtBroadcastI(&jaulaint_event);
+    chSysUnlockFromISR();
+}
+
+static void tempOffApertura_cb(void *arg)
+{
+    (void)arg;
+    chSysLockFromISR();
+    chEvtBroadcastI(&jaulaint_event);
+    chSysUnlockFromISR();
+}
+
+void trataCambios(void)
+{
+    switch (estado)
+    {
+        case esperoApertura:
+            if (estadoJaulaOpened && !estadoJaulaClosed)
+            {
+                estado = abiertoTemporizando;
+                chVTSet(&tempApertura_vt, OSAL_MS2I(5000), tempOffApertura_cb, NULL);
+            }
+            break;
+        case abiertoTemporizando:
+            if (estadoJaulaOpened && !estadoJaulaClosed)
+                estado = esperoGato;
+            else
+                estado = esperoApertura;
+            break;
+        case esperoGato:
+            if (!estadoJaulaOpened)
+            {
+                if (estadoJaulaClosed)
+                    estado = gatoEnJaula;
+                else
+                {
+                    estado = cayendoPuerta;
+                    chVTSet(&tempCayendo_vt, OSAL_MS2I(5000), tempOffCayendo_cb, NULL);
+                }
+            }
+            break;
+        case cayendoPuerta:
+            if (!estadoJaulaOpened && estadoJaulaClosed)
+            {
+                estado = gatoEnJaula;
+                chVTReset(&tempCayendo_vt); // ya no hace falta esperar a que caiga
+            }
+            break;
+        case atascada: // a buenas horas cierras o haces algún cambio
+            break;
+        case gatoEnJaula:
+            break;
+        case avisado:
+            break;
+      }
+}
 
 // restaura eventos Jaula
 static void activaEventosJaula_cb(void *arg) {
     (void)arg;
-   uint8_t estado = palReadPad(GPIOA, GPIOA_JAULA);
-   if (estadoJaula != estado)
-   {
-       estadoJaula = estado;
-   }
    if (estadoEnableEventJaula==0)
    {
        estadoEnableEventJaula = 1;
-       palEnableLineEventI(LINE_A8_JAULA, PAL_EVENT_MODE_BOTH_EDGES);
-       palSetLineCallbackI(LINE_A8_JAULA, jaula_cb, NULL);
+       palEnableLineEventI(LINE_A8_JAULACLOSED, PAL_EVENT_MODE_BOTH_EDGES);
+       palSetLineCallbackI(LINE_A8_JAULACLOSED, jaulaChanged_cb, (void *)1);
+       palEnableLineEventI(LINE_A9_JAULAOPENED, PAL_EVENT_MODE_BOTH_EDGES);
+       palSetLineCallbackI(LINE_A9_JAULAOPENED, jaulaChanged_cb, (void *)2);
    }
+   chSysLockFromISR();
+   chEvtBroadcastI(&jaulaint_event);
+   chSysUnlockFromISR();
 }
 
 /*
  * Interrupciones sensores
  */
-static void jaula_cb(void *arg) {
-  (void)arg;
-  uint8_t estado = palReadPad(GPIOA, GPIOA_JAULA);
-  chSysLockFromISR();
-  if (estadoJaula != estado)
-  {
-      estado = estadoJaula;
-  }
-  if (estadoEnableEventJaula==1)
-  {
-      estadoEnableEventJaula = 0;
-      palDisableLineEventI(LINE_A8_JAULA);
-      chVTSetI(&antiRebote_vt, OSAL_MS2I(50), activaEventosJaula_cb, NULL);
-  }
-  chEvtBroadcastI(&jaulaint_event);
-  chSysUnlockFromISR();
+static void jaulaChanged_cb(void *arg)
+{
+    (void)arg;
+//    int sensorChanged = (int) arg; // por si lo precisara
+    chSysLockFromISR();
+    if (estadoEnableEventJaula == 1)
+    {
+        estadoEnableEventJaula = 0;
+        palDisableLineEventI (LINE_A8_JAULACLOSED);
+        palDisableLineEventI (LINE_A9_JAULAOPENED);
+        chVTSetI(&antiRebote_vt, OSAL_MS2I(50), activaEventosJaula_cb, NULL);
+    }
+    chSysUnlockFromISR();
 }
+
 
 
 
@@ -71,32 +168,36 @@ static void jaula_cb(void *arg) {
 static THD_WORKING_AREA(sensorint_wa, 128);
 static THD_FUNCTION(sensorint, p) {
   (void)p;
-  uint8_t estadoThr;
   eventmask_t evt;
   chRegSetThreadName("sensorint");
   estadoEnableEventJaula = 1;
-  palEnableLineEvent(LINE_A8_JAULA, PAL_EVENT_MODE_BOTH_EDGES);
-  palSetLineCallback(LINE_A8_JAULA, jaula_cb, NULL);
-  chEvtRegister(&jaulaint_event, &elJaula, 0);
+  estado = esperoApertura;
+  // habilito gestion de cambios en sensores
+  palEnableLineEvent(LINE_A8_JAULACLOSED, PAL_EVENT_MODE_BOTH_EDGES);
+  palSetLineCallback(LINE_A8_JAULACLOSED, jaulaChanged_cb, (void *)1);
+  palEnableLineEvent(LINE_A9_JAULAOPENED, PAL_EVENT_MODE_BOTH_EDGES);
+  palSetLineCallback(LINE_A9_JAULAOPENED, jaulaChanged_cb, (void *)2);
+  // notificacion de que ha habido cambios
+  chEvtRegister(&jaulaint_event, &elJaulaChanged, 1);
   while(!chThdShouldTerminateX()) {
-    evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(1000));
-    if (evt==0) // timeout, chequea estados
+    evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_S2I(100));
+    uint8_t hayCambios = actualizaEstados();
+    if (evt==0 && hayCambios) // timeout, chequea estados
+        trataCambios();
+    if (evt & EVENT_MASK(1)) // jaula
+        trataCambios();
+    if (estado==gatoEnJaula)
     {
-        if (estadoJaula!=palReadPad(GPIOA, GPIOA_JAULA))
-        {
-            estadoJaula = palReadPad(GPIOA, GPIOA_JAULA);
-            // comprueba si hay que enviar mensaje
-        }
+        // envia mensaje
+        estado = avisado;
     }
-    if (evt & EVENT_MASK(0)) // jaula
+    if (estado==atascada)
     {
-        estadoThr = estadoJaula;
-        // ha cambiado de estado.
-        // Para evitar rebotes desactiva eventos 100 ms y lee al final el nuevo estado
-        // comprueba si hay que enviar mensaje
+        // envia mensaje
+        estado = avisado;
     }
   }
-  chEvtUnregister(&jaulaint_event, &elJaula);
+  chEvtUnregister(&jaulaint_event, &elJaulaChanged);
   procesoSensor = NULL;
   chThdExit((msg_t) 1);
 }
@@ -109,12 +210,15 @@ static THD_FUNCTION(sensorint, p) {
  */
 void initSensores(void)
 {
-    palSetPadMode(GPIOA, GPIOA_JAULA, PAL_MODE_INPUT);
-    estadoJaula = palReadPad(GPIOA, GPIOA_JAULA);
     chVTObjectInit(&antiRebote_vt);
+    chVTObjectInit(&tempApertura_vt);
+    chVTObjectInit(&tempCayendo_vt);
+    chEvtObjectInit(&jaulaint_event);
 
-    palSetPadMode(GPIOA, GPIOA_CONFIG, PAL_MODE_INPUT);
-    palEnablePadEvent(GPIOA, GPIOA_CONFIG, PAL_EVENT_MODE_BOTH_EDGES);
+    palSetPadMode(GPIOA, GPIOA_JAULACLOSED, PAL_MODE_INPUT);
+    estadoJaulaClosed = palReadPad(GPIOA, GPIOA_JAULACLOSED);
+    palSetPadMode(GPIOA, GPIOA_JAULAOPENED, PAL_MODE_INPUT);
+    estadoJaulaOpened = palReadPad(GPIOA, GPIOA_JAULAOPENED);
 
     if (!procesoSensor)
         procesoSensor = chThdCreateStatic(sensorint_wa, sizeof(sensorint_wa), NORMALPRIO + 7,  sensorint, NULL);
