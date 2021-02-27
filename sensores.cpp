@@ -36,12 +36,13 @@ enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta,
 thread_t *procesoSensor;
 event_source_t jaulaint_event;
 event_listener_t elJaulaChanged;
-uint8_t estadoJaulaClosed, estadoJaulaOpened, estadoEnableEventJaula;
+uint8_t estadoJaulaClosed, estadoJaulaOpened, estadoEnableEventJaulaClosed, estadoEnableEventJaulaOpened;
 enum estado_t estado;
 
 
-static virtual_timer_t antiRebote_vt, tempApertura_vt, tempCayendo_vt;
-static void jaulaChanged_cb(void *arg);
+static virtual_timer_t antiReboteClosed_vt, antiReboteOpened_vt, tempApertura_vt, tempCayendo_vt;
+static void jaulaChangedClosed_cb(void *arg);
+static void jaulaChangedOpened_cb(void *arg);
 
 
 uint8_t actualizaEstados(void)
@@ -124,36 +125,58 @@ void trataCambios(void)
       }
 }
 
+
+
 // restaura eventos Jaula
-static void activaEventosJaula_cb(void *arg) {
+static void activaEventosJaulaClosed_cb(void *arg) {
     (void)arg;
-   if (estadoEnableEventJaula==0)
+   if (estadoEnableEventJaulaClosed==0)
    {
-       estadoEnableEventJaula = 1;
+       estadoEnableEventJaulaClosed = 1;
        palEnableLineEventI(LINE_A8_JAULACLOSED, PAL_EVENT_MODE_BOTH_EDGES);
-       palSetLineCallbackI(LINE_A8_JAULACLOSED, jaulaChanged_cb, (void *)1);
+       palSetLineCallbackI(LINE_A8_JAULACLOSED, jaulaChangedClosed_cb, (void *)1);
+   }
+   chSysLockFromISR();
+   chEvtBroadcastI(&jaulaint_event);
+   chSysUnlockFromISR();
+}
+static void activaEventosJaulaOpened_cb(void *arg) {
+    (void)arg;
+   if (estadoEnableEventJaulaOpened==0)
+   {
+       estadoEnableEventJaulaOpened = 1;
        palEnableLineEventI(LINE_A9_JAULAOPENED, PAL_EVENT_MODE_BOTH_EDGES);
-       palSetLineCallbackI(LINE_A9_JAULAOPENED, jaulaChanged_cb, (void *)2);
+       palSetLineCallbackI(LINE_A9_JAULAOPENED, jaulaChangedOpened_cb, (void *)2);
    }
    chSysLockFromISR();
    chEvtBroadcastI(&jaulaint_event);
    chSysUnlockFromISR();
 }
 
+
 /*
  * Interrupciones sensores
  */
-static void jaulaChanged_cb(void *arg)
+static void jaulaChangedClosed_cb(void *)
 {
-    (void)arg;
-//    int sensorChanged = (int) arg; // por si lo precisara
+//    int sensorChanged = (int) arg;
     chSysLockFromISR();
-    if (estadoEnableEventJaula == 1)
+    if (estadoEnableEventJaulaClosed == 1)
     {
-        estadoEnableEventJaula = 0;
+        estadoEnableEventJaulaClosed = 0;
         palDisableLineEventI (LINE_A8_JAULACLOSED);
+        chVTSetI(&antiReboteClosed_vt, OSAL_MS2I(50), activaEventosJaulaClosed_cb, NULL);
+    }
+    chSysUnlockFromISR();
+}
+static void jaulaChangedOpened_cb(void *)
+{
+    chSysLockFromISR();
+    if (estadoEnableEventJaulaOpened == 1)
+    {
+        estadoEnableEventJaulaOpened = 0;
         palDisableLineEventI (LINE_A9_JAULAOPENED);
-        chVTSetI(&antiRebote_vt, OSAL_MS2I(50), activaEventosJaula_cb, NULL);
+        chVTSetI(&antiReboteOpened_vt, OSAL_MS2I(50), activaEventosJaulaOpened_cb, NULL);
     }
     chSysUnlockFromISR();
 }
@@ -170,13 +193,14 @@ static THD_FUNCTION(sensorint, p) {
   (void)p;
   eventmask_t evt;
   chRegSetThreadName("sensorint");
-  estadoEnableEventJaula = 1;
+  estadoEnableEventJaulaClosed = 1;
+  estadoEnableEventJaulaOpened = 1;
   estado = esperoApertura;
   // habilito gestion de cambios en sensores
   palEnableLineEvent(LINE_A8_JAULACLOSED, PAL_EVENT_MODE_BOTH_EDGES);
-  palSetLineCallback(LINE_A8_JAULACLOSED, jaulaChanged_cb, (void *)1);
+  palSetLineCallback(LINE_A8_JAULACLOSED, jaulaChangedClosed_cb, (void *)1);
   palEnableLineEvent(LINE_A9_JAULAOPENED, PAL_EVENT_MODE_BOTH_EDGES);
-  palSetLineCallback(LINE_A9_JAULAOPENED, jaulaChanged_cb, (void *)2);
+  palSetLineCallback(LINE_A9_JAULAOPENED, jaulaChangedOpened_cb, (void *)2);
   // notificacion de que ha habido cambios
   chEvtRegister(&jaulaint_event, &elJaulaChanged, 1);
   while(!chThdShouldTerminateX()) {
@@ -210,7 +234,8 @@ static THD_FUNCTION(sensorint, p) {
  */
 void initSensores(void)
 {
-    chVTObjectInit(&antiRebote_vt);
+    chVTObjectInit(&antiReboteClosed_vt);
+    chVTObjectInit(&antiReboteOpened_vt);
     chVTObjectInit(&tempApertura_vt);
     chVTObjectInit(&tempCayendo_vt);
     chEvtObjectInit(&jaulaint_event);

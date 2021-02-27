@@ -50,6 +50,8 @@ static THD_FUNCTION(threadSMS, smsPtr) {
     event_listener_t smsSend_listener, receivedData;
     chRegSetThreadName("SMS");
 
+    // prueba dormir y despertar
+    smsP->sleep();
 
     chEvtRegisterMask(&enviarSMS_source, &smsSend_listener,EVENT_MASK(0));
     chEvtRegisterMaskWithFlags (chnGetEventSource(&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
@@ -70,7 +72,9 @@ static THD_FUNCTION(threadSMS, smsPtr) {
         }
         if (evt & EVENT_MASK(0)) // Evento enviar SMS
         {
+            smsP->despierta();
             smsP->sendSMS();
+            smsP->sleep();
             continue;
         }
         if (evt & EVENT_MASK(1)) // Algo ha entrado por la SIM
@@ -78,13 +82,13 @@ static THD_FUNCTION(threadSMS, smsPtr) {
             flags = chEvtGetAndClearFlags(&receivedData);
             if (flags & CHN_INPUT_AVAILABLE)
             {
-                chgetsNoEchoTimeOut((BaseChannel  *)&SD2, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(100),&huboTimeout);
+                chgetsNoEchoTimeOut((BaseChannel *)smsP->pSD, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(100),&huboTimeout);
                 if (huboTimeout)
                     goto continuaRx;
                 // si es una linea en blanco, lee la siguiente
                 if (bufferSendSMS[0]==0)
                 {
-                    chgetsNoEchoTimeOut((BaseChannel  *)&SD2, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(100),&huboTimeout);
+                    chgetsNoEchoTimeOut((BaseChannel *)smsP->pSD, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(100),&huboTimeout);
                     if (huboTimeout)
                         goto continuaRx;
                 }
@@ -92,13 +96,15 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                 if (!strncmp(bufferSendSMS,"+CMTI: ",6))
                 {
                     Str2Int((uint8_t *)&bufferSendSMS[12], &posSMS);
-                    smsP->leoSmsCMTI((BaseSequentialStream *)&SD2);
+                    smsP->leoSmsCMTI();
                 }
                 // +CMT: "+34619262851","19/12/05,21:12:30+04"
                 else if (!strncmp(bufferSendSMS,"+CMT: ",6))
                 {
                     chEvtUnregister(chnGetEventSource(&SD2), &receivedData);
+                    smsP->despierta();
                     smsP->leoSMS(bufferSendSMS,sizeof(bufferSendSMS));
+                    smsP->sleep();
                     chEvtRegisterMaskWithFlags (chnGetEventSource (&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
                 }
                 else if (!strncmp(bufferSendSMS,"Call Ready",sizeof(bufferSendSMS)))
@@ -143,8 +149,9 @@ static THD_FUNCTION(threadSMS, smsPtr) {
         if (++dsQuery>=200)
         {
             chEvtUnregister(chnGetEventSource(&SD2),&receivedData);
+            smsP->despierta();
             // comprueba conexion
-            hayError = modemParametros((BaseChannel  *)&SD2,"AT+CREG?\r\n","+CREG:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
+            hayError = modemParametros((BaseChannel *)smsP->pSD,"AT+CREG?\r\n","+CREG:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
             uint8_t newEstadoCREG = bufferSendSMS[7]-'0';
             // si ha cambiado el estado, actualiza Nextion
             if (newEstadoCREG != smsP->estadoCREG)
@@ -162,7 +169,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                 if (unix_time-smsP->tiempoLastConexion > 180)
                 {
                     smsP->tiempoLastConexion = unix_time;
-                    smsP->initSIM800SMS((BaseChannel  *)&SD2);
+                    smsP->initSIM800SMS();
                 }
             }
             else
@@ -173,19 +180,19 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                 if (unix_time-ultQuerySMS > 10)
                 {
                     ultQuerySMS = unix_time;
-                    smsP->leoSmsCMTI((BaseSequentialStream  *)&SD2);
+                    smsP->leoSmsCMTI();
                 }
                 // ajusta hora cada semana
                 if (unix_time-ultAjusteHora > 604800)
                 {
                     // leo hora
-                    smsP->ponHoraConGprs((BaseChannel  *)&SD2);
+                    smsP->ponHoraConGprs();
                     ultAjusteHora = calendar::GetTimeUnixSec();
                 }
                 // leo proveedor, si no lo ten�a claro
                 if (!smsP->proveedor[0])
                 {
-                    hayError = modemParametros((BaseChannel  *)&SD2,"AT+COPS?\r\n","+COPS:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
+                    hayError = modemParametros((BaseChannel *)smsP->pSD,"AT+COPS?\r\n","+COPS:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
                     //+COPS: 0,0,"vodafone"
                     if (numParametros>=3 && strlen((char *)parametros[2])>3)
                     {
@@ -193,22 +200,23 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                     }
                 }
                 // Aprovecho para preguntar RSSI
-                hayError = modemParametros((BaseChannel  *)&SD2,"AT+CSQ\r\n","+CSQ:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
+                hayError = modemParametros((BaseChannel *)smsP->pSD,"AT+CSQ\r\n","+CSQ:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
                 if (hayError==0 && numParametros>=1)
                 {
                     smsP->rssiGPRS = lee2car(parametros[0],0,0,99,&hayError);
                 }
                 // miro si hay mensajes
-//                modemOrden((BaseChannel  *)&SD2, "at+cnmi=1,2,0,0,0\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
+//                modemOrden((BaseChannel *)smsP->pSD, "at+cnmi=1,2,0,0,0\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
             }
             dsQuery = 0;
+            smsP->sleep();
             chEvtRegisterMaskWithFlags (chnGetEventSource(&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
         }
     }
 }
 
 
-void sms::initThreadSMS(BaseChannel  *pSD)
+void sms::initThreadSMS()
 {
     pSDSMS = pSD;
     if (!procesoSMS)

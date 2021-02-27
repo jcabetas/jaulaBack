@@ -41,14 +41,14 @@ void sms::startSMS(void)
     uint8_t error;
     mataSMS();
 
-    error = initSIM800SMS((BaseChannel *)&SD2);
+    error = initSIM800SMS();
     if (error)
     {
         hayError = 1;
         return;
     }
     hayError = 0;
-    initThreadSMS((BaseChannel *)&SD2);
+    initThreadSMS();
 }
 
 void haCambiadoGPRS(void)
@@ -59,9 +59,12 @@ void haCambiadoGPRS(void)
 
 // SMS tlfAdmin logTxt rssiTxt proveedorTxt smsReady
 // SMS [tlfAdmin.sms 619262851] [pin.sms 3421] logSms.sms.txt rssi.sms.txt proveedor.sms.txt smsReady.sms.pic.31 creg.sms.txt
-sms::sms(const char *numTelefAdminDefault, const char *pinDefault)
+sms::sms(const char *numTelefAdminDefault, const char *pinDefault, BaseChannel *puertoSD, uint8_t bajoCons)
 {
     //  escribeStr50_C(&sectorNumTelef, "numTelef", "619262851");
+    bajoConsumo = bajoCons;
+    durmiendo = 0;
+    pSD = puertoSD;
     uint16_t sectorNumTelef = SECTORNUMTELEF;
     uint16_t sectorPin = SECTORPIN;
     leeStr50(&sectorNumTelef, "numTelef", numTelefAdminDefault, telefonoAdmin);
@@ -100,7 +103,7 @@ void sms::addMsgRespuesta(const char *texto)
 void initSMS(void)
 {
     char buffTest[50];
-    smsModem = new sms("619262851","");
+    smsModem = new sms("619262851","", (BaseChannel *)&SD2, 1);
     smsModem->init();
     chThdSleepMilliseconds(2000);
     strcpy(buffTest,"status");

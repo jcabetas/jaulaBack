@@ -39,6 +39,8 @@ private:
     char telefonoRecibido[16];
     char telefonoEnvio[16];
     uint8_t estadoPuesto;
+    uint8_t bajoConsumo;
+    uint8_t durmiendo;
     mutex_t MtxEspSim800SMS;
     uint8_t horaSMStoTM(uint8_t *cadena, struct tm *fecha);
     void procesaOrdenAsignacion(char *orden, char *puntSimbIgual);
@@ -47,11 +49,12 @@ private:
     void procesaID(char *idNum);
     void procesaStatus(void);
 public:
+    BaseChannel  *pSD;
     uint8_t callReady, smsReadyVal, estadoCREG, rssiGPRS, pinReady, hayError;
     char proveedor[25];
     time_t tiempoLastConexion;
 
-    sms(const char *numTelefAdminDefault, const char *pinDefault);
+    sms(const char *numTelefAdminDefault, const char *pinDefault, BaseChannel *puertoSD, uint8_t bajoConsumo);
     ~sms();
 
     // para implementar "bloque"
@@ -66,16 +69,18 @@ public:
     void startSMS(void);
     void mataSMS(void);
     void leoSMS(char *bufferSendSMS, uint16_t buffSize);
-    uint8_t initSIM800SMS(BaseChannel  *pSD);
-    void initThreadSMS(BaseChannel  *pSD);
+    uint8_t initSIM800SMS(void);
+    void initThreadSMS(void);
     const char *diTelefonoAdmin(void);
     const char *diMsgRespuesta(void);
-    uint8_t ponHoraConGprs(BaseChannel  *pSD);
+    uint8_t ponHoraConGprs(void);
     void interpretaSMS(uint8_t *textoSMS);
-    int8_t sendSMS(BaseChannel  *pSD, char *msg, char *numTelefono);
+    int8_t sendSMS(char *msg, char *numTelefono);
     void sendSMS(void);
+    void sleep(void);
+    void despierta(void);
     void trataOrdenNextion(char *vars[], uint16_t numPars);
-    void leoSmsCMTI(BaseSequentialStream  *pSD);
+    void leoSmsCMTI(void);
     void borraMsgRespuesta(void);
     void addMsgRespuesta(const char *texto);
     void ponEstado(void);

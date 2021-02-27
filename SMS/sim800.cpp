@@ -67,7 +67,7 @@ uint16_t lee2car(uint8_t *buffer, uint16_t posIni,uint16_t minValor, uint16_t ma
 }
 
 
-int8_t sms::sendSMS(BaseChannel  *pSD, char *msg, char *numTelefono)
+int8_t sms::sendSMS(char *msg, char *numTelefono)
 {
     uint8_t hayError, huboTimeout, ch, bufferSMS[40];
     char bufferSendSMS[50];
@@ -112,17 +112,18 @@ void sms::sendSMS(void)
     if (!msgRespuesta[0])
         return;
     if (telefonoRecibido[0])
-        sendSMS((BaseChannel  *)&SD2, msgRespuesta, telefonoRecibido);
+        sendSMS(msgRespuesta, telefonoRecibido);
     else
-        sendSMS((BaseChannel  *)&SD2, msgRespuesta, telefonoAdmin);
+        sendSMS(msgRespuesta, telefonoAdmin);
     borraMsgRespuesta();
 }
 
-uint8_t sms::initSIM800SMS(BaseChannel  *pSD)
+uint8_t sms::initSIM800SMS(void)
 {
     uint8_t hayError, numIntentos;
     uint8_t numParametros, *parametros[10];
     char buffer[30], bufferSendSMS[150];
+
 
     // soft init
     callReady = 0;
@@ -167,16 +168,16 @@ uint8_t sms::initSIM800SMS(BaseChannel  *pSD)
         hayError = modemOrden(pSD,"AT&W\r\n", bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(1000));
     }
     // SIM insertada?
-    hayError = modemParametros((BaseChannel  *)&SD2,"AT+CSMINS?\r\n","+CSMINS:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
+    hayError = modemParametros(pSD,"AT+CSMINS?\r\n","+CSMINS:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
     if (numParametros==2 && atoi((char *) parametros[1])==0)
     {
         return 1;
     }
     // estado pin
-    hayError = modemParametros((BaseChannel  *)&SD2,"AT+CPIN?\r\n","+CPIN:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
+    hayError = modemParametros(pSD,"AT+CPIN?\r\n","+CPIN:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
     if (numParametros==1 && !strncmp((char *) parametros[0],"SIM_PIN",7)) // la SIM esta esperando el PIN
     {
-        hayError = modemParametros((BaseChannel  *)&SD2,"AT+SPIC\r\n","+SPIC:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
+        hayError = modemParametros(pSD,"AT+SPIC\r\n","+SPIC:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
         chsnprintf(buffer,sizeof(buffer),"Quedan %d intentos PIN\n\r",atoi((char *) parametros[0]));
         chsnprintf(buffer,sizeof(buffer),"AT+CPIN=%s\r\n",pin);
         hayError = modemOrden(pSD,buffer, bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(1000));
@@ -186,15 +187,15 @@ uint8_t sms::initSIM800SMS(BaseChannel  *pSD)
         }
     }
     // Aprovecho para preguntar RSSI
-    hayError = modemParametros((BaseChannel  *)&SD2,"AT+CSQ\r\n","+CSQ:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
+    hayError = modemParametros(pSD,"AT+CSQ\r\n","+CSQ:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(200),&numParametros, parametros);
     // Registrar en red
     modemOrden(pSD, "AT+CREG=1\r\n", bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(1000));
     // SMS modo texto
     modemOrden(pSD, "AT+CMGF=1\r\n", bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(500));
     // que me digan todos los mensajes
-    modemOrden((BaseChannel  *)&SD2, "at+cmgl=\"ALL\"\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
+    modemOrden(pSD, "at+cmgl=\"ALL\"\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
     // SMS notification: memorizo aunque me llegaran notificaciones CMTI
-    modemOrden((BaseChannel  *)&SD2, "at+cnmi=2,1,0,0,0\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
+    modemOrden(pSD, "at+cnmi=2,1,0,0,0\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
     return 0;
 }
 
@@ -213,7 +214,7 @@ Vamos a ver
 OK
 
  */
-void sms::leoSmsCMTI(BaseSequentialStream  *pSD)
+void sms::leoSmsCMTI(void)
 {
     uint8_t huboTimeout, hayError, hayMensaje;
     uint8_t bufferGetsGPRS[20], numSMSaBorrar;
@@ -226,7 +227,7 @@ void sms::leoSmsCMTI(BaseSequentialStream  *pSD)
     {
         hayMensaje = 0;
         // envio orden de volcar mensajes
-        chprintf(pSD, "at+cmgl=\"ALL\"\r\n");
+        chprintf((BaseSequentialStream *)pSD, "at+cmgl=\"ALL\"\r\n");
         // no hago caso del eco inicial
         chgetsNoEchoTimeOut((BaseChannel *) pSD, (uint8_t *) bufferCMGL, sizeof(bufferCMGL), TIME_MS2I(500),&huboTimeout);
         // solo nos vamos a fijar en el primer mensaje. Lo leemos, saltamos el resto, procesamos y borramos
@@ -362,6 +363,31 @@ void sms::leoSMS(char *bufferSendSMS, uint16_t buffSize)
     chEvtBroadcast(&enviarSMS_source);
 }
 
+void sms::sleep(void)
+{
+    uint8_t buffer[20];
+    if (!bajoConsumo)
+        return;
+    if (!durmiendo)
+    {
+        uint8_t hayError = modemOrden(pSD, "AT+CSCLK=2\r\n", buffer, sizeof(buffer), TIME_MS2I(500));
+        if (!hayError)
+            durmiendo = 1;
+    }
+}
+
+void sms::despierta(void)
+{
+    uint8_t buffer[20];
+    if (!bajoConsumo)
+        return;
+    chprintf((BaseSequentialStream *)pSD, "despierta!!\r\n");
+    chThdSleepMilliseconds(200);
+    uint8_t hayError = modemOrden(pSD, "AT+CSCLK=0\r\n", buffer, sizeof(buffer), TIME_MS2I(500));
+    if (!hayError)
+        durmiendo = 0;
+}
+
 /*
  * Convierto fecha SMS a struct tm
  * Formato: 19/12/05,21:12:30+04
@@ -388,7 +414,7 @@ uint8_t sms::horaSMStoTM(uint8_t *cadena, struct tm *fecha)
 }
 
 
-uint8_t sms::ponHoraConGprs(BaseChannel  *pSD)
+uint8_t sms::ponHoraConGprs(void)
 {
     uint8_t hayError, numParametros, *parametros[10];
     char buffer[40];
