@@ -19,30 +19,9 @@ using namespace chibios_rt;
 #include "time.h"
 #include "calendar.h"
 
-//mutex_t MtxEspSim800SMS;
 
-//extern uint8_t hayGPRS, hayCAN, prefWifi, prefMovil, mqttMedCoche, mqttMedTotales, mqttEstado, smsFinCarga, smsEstado, smsBotonParo;
-//extern uint16_t mqqtTiempo;
-//extern uint8_t esp8266AP[21], esp8266Psswd[26];
-
-//extern uint32_t secsUTM;
-//extern struct sdate fechaLocal;
-//extern mutex_t MtxSecs;
-//extern uint32_t segundosUTMCambioInv2Ver, segundosUTMCambioVer2Inv;
-
-//extern uint8_t mqqtOk, smsOk, gprsOk;
-
-//extern uint8_t telefonoEnvio[16];
-//extern uint8_t telefonoRecibido[16];
-//extern char bufferSendSMS[200];
 extern event_source_t enviarSMS_source;
-//char mensajeRecibido[200];
-//extern char bufferSendSMS[200];
-//uint8_t bufferSMS[200];
-
-//void SetTimeUnixSec(time_t unix_time);
 time_t GetTimeUnixSec(void);
-//uint8_t hayGPRSValor(void);
 void limpiaSerie(BaseChannel  *pSD, uint8_t *buffer, uint16_t bufferSize);
 void chgetsNoEchoTimeOut(BaseChannel  *pSD, uint8_t *buffer, uint16_t bufferSize,systime_t timeout, uint8_t *huboTimeout);
 void buscaParametros(uint8_t *posCadena, uint8_t *numParametros,uint8_t *parametros[]);
@@ -101,7 +80,6 @@ int8_t sms::sendSMS(char *msg, char *numTelefono)
     chnWrite(pSD,(uint8_t *) msg, strlen(msg));   // chprintf((BaseSequentialStream  *) pSD, msg);
     // termino con ^Z
     chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"%c",(char) 26);  //26 es CTRL-Z
-//    antes chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"%s%c", msg,(char) 26);  //26 es CTRL-Z
     hayError = modemOrden(pSD,bufferSendSMS, bufferSMS, sizeof(bufferSMS),TIME_MS2I(8000));
     chMtxUnlock(&MtxEspSim800SMS);
     // borra datos mensaje, preparando para el proximo
@@ -125,7 +103,6 @@ uint8_t sms::initSIM800SMS(void)
     uint8_t hayError, numIntentos;
     uint8_t numParametros, *parametros[10];
     char buffer[30], bufferSendSMS[150];
-
 
     // soft init
     callReady = 0;
@@ -288,46 +265,6 @@ void sms::leoSmsCMTI(void)
             }
         }
     } while (hayMensaje);
-//
-//
-//
-//    // +CMT: "+34619262851","","20/03/07,08:40:04+04"
-//    for (i=7;i<sizeof(bufferSendSMS) && i<strlen(bufferSendSMS);i++)
-//    {
-//        if (bufferSendSMS[i]=='\"')
-//            break;
-//        telefonoRecibido[i-7] = bufferSendSMS[i];
-//    }
-//    telefonoRecibido[i-7] = 0;
-//    // decodifico fecha
-//    horaSMStoTM((uint8_t *)&bufferSendSMS[25], &fechaSMS);
-//    chsnprintf(buffer,sizeof(buffer),"SMS de %s",telefonoRecibido);
-//    msgParaLCD(buffer, 1000);
-//    chsnprintf(buffer,sizeof(buffer),"%d/%d/%d %d:%d:%d",
-//                    fechaSMS.tm_mday, fechaSMS.tm_mon+1, fechaSMS.tm_year+1900,
-//                    fechaSMS.tm_hour, fechaSMS.tm_min, fechaSMS.tm_sec);
-//    msgParaLCD(buffer, 1000);
-//    // mensaje (puede haber varias lineas)
-//    mensajeRecibido[0] = 0;
-//    // reaprovecho bufferSendSMS
-//    do
-//    {
-//        chgetsNoEchoTimeOut((BaseChannel  *)&SD2, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(100),&huboTimeout);
-//        if (!huboTimeout)
-//        {
-//            strncat(mensajeRecibido,";",2);
-//            strncat(mensajeRecibido,bufferSendSMS,sizeof(mensajeRecibido));
-//        }
-//        else
-//            break;
-//    } while (TRUE);
-//    msgParaLCD(mensajeRecibido,1000);
-//    // escribe en log de SD
-//    chsnprintf(buffer,sizeof(buffer),"SMS de %s: %s",telefonoRecibido, mensajeRecibido);
-//    registraEnLog(buffer);
-//    // interpreta SMS y envia mensaje correspondiente
-//    interpretaSMS((uint8_t *)mensajeRecibido);
-//    chEvtBroadcast(&enviarSMS_source);
 }
 
 
@@ -367,10 +304,6 @@ void sms::leoSMS(char *bufferSendSMS, uint16_t buffSize)
         else
             break;
     } while (TRUE);
-    //msgParaLCD(mensajeRecibido,1000);
-    // escribe en log de SD
-    //chsnprintf(buffer,sizeof(buffer),"SMS de %s: %s",telefonoRecibido, mensajeRecibido);
-    // interpreta SMS y envia mensaje correspondiente
     interpretaSMS((uint8_t *)mensajeRecibido);
     chEvtBroadcast(&enviarSMS_source);
 }

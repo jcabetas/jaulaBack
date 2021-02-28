@@ -70,6 +70,8 @@ uint8_t actualizaEstados(void)
 static void tempOffCayendo_cb(void *arg)
 {
     (void)arg;
+    if (!estadoJaulaOpened && !estadoJaulaClosed)
+        estado = atascada;
     chSysLockFromISR();
     chEvtBroadcastI(&jaulaint_event);
     chSysUnlockFromISR();
@@ -219,7 +221,6 @@ static THD_FUNCTION(sensorint, p) {
         if (smsModem==NULL)
             continue;
         smsModem->borraMsgRespuesta();
-        smsModem->addMsgRespuesta("Gato en jaula!!");
         smsModem->ponEstado();
         chEvtBroadcast(&enviarSMS_source);
         estado = avisado;
@@ -231,7 +232,6 @@ static THD_FUNCTION(sensorint, p) {
         if (smsModem==NULL)
             continue;
         smsModem->borraMsgRespuesta();
-        smsModem->addMsgRespuesta("Puerta atascada!!");
         smsModem->ponEstado();
         chEvtBroadcast(&enviarSMS_source);
         estado = avisado;

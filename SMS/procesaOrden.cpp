@@ -35,6 +35,8 @@ float hallaCapBat(float *vBat);
 
 extern event_source_t enviarSMS_source;
 extern uint8_t estadoJaulaClosed, estadoJaulaOpened;
+extern uint8_t estado;
+const char estadoDesc[][25]={"inicio","esperando abrir jaula","espero apertura estable","esperando gato","puerta cayendo","puerta atascada","gato en jaula","avisada la captura"};
 
 void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam)
 {
@@ -226,6 +228,10 @@ void sms::ponEstado(void)
     float vBat, capBat;
     if (estadoPuesto==1)
         return;
+    uint8_t estJaula = estado;
+    if (estJaula>7)
+        estJaula = 0;
+    addMsgRespuesta(estadoDesc[estJaula]);
     if (estadoJaulaClosed && !estadoJaulaOpened)
         addMsgRespuesta("Jaula cerrada");
     else if (!estadoJaulaClosed && estadoJaulaOpened)
