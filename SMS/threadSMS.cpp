@@ -25,8 +25,8 @@ BaseChannel  *pSDSMS;
 
 /*
  * Proceso SMS
- * Escucha para eventos de enviar SMS, y de vez en cuando busca SMS y la fecha del sistema
- * El SMS a enviar estara en variable global pendienteSMS al telefono tfnoSMS
+ * Escucha para eventos de enviar SMS, y de vez en cuando busca SMS y la fecha del sistema y estado de comunicaciones
+ * El SMS a enviar esta definido en clase "sms" que se pasa por parametro
  */
 
 static THD_WORKING_AREA(waSMS, 2024);
@@ -37,7 +37,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
     eventflags_t flags;
     uint8_t huboTimeout;
     int16_t dsQuery; // contador para ver estados
-    //char buffer[20];
+
     char bufferSendSMS[200];
     uint32_t posSMS;
     time_t ultAjusteHora = 0, ultQuerySMS = 0;
@@ -146,7 +146,6 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                 }
             }
             continuaRx:
-//            chEvtRegisterMaskWithFlags (chnGetEventSource (&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
             continue;
         }
         // Actualizo datos cada 20 segundos

@@ -12,17 +12,15 @@ extern "C"
     void initAdc(void);
 }
 
-//                       0%   5%     10%    15%   20%    25%     30%    35%   40%    45%    50%
+//                       0%      5%    10%    15%    20%    25%    30%    35%   40%     45%    50%
 float lipoVoltCharge[]={3.3f,  3.50f, 3.69f, 3.71f, 3.73f, 3.75f, 3.77f, 3.79f, 3.8f, 3.82f, 3.84f,\
                         3.85f, 3.87f, 3.91f, 3.95f, 3.98f, 4.02f, 4.08f, 4.11f, 4.15f, 4.20f };
-//                       55%    60%    65%   70%     75%    80%    85%    90%   95%     100%
+//                       55%    60%    65%    70%    75%    80%    85%    90%    95%    100%
 
 /*
  * La tension se lee en PA7 (ADC7), a traves de divisor con factor 0,69894
  *   El fondo de escala es 4096 corresponde a 3.3 V
  *   Por tanto la tension es ADC*3.314/(0,69894*4096) = ADC*0,001157584
- * La temperatura  es Vtemp = 0,76 + 0.0025*(T-25)
- *   => T = 25 + (V - 0,76)/0.025
  */
 
 #define ADC_GRP1_NUM_CHANNELS   1
@@ -41,8 +39,8 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
 
 /*
  * ADC conversion group.
- * Mode:        Linear buffer, 8 samples of 1 channel, SW triggered.
- * Channels:    IN11.
+ * Mode:        Linear buffer, 4 samples of 1 channel, SW triggered.
+ * Channels:    B1 == AN9.
  */
 static const ADCConversionGroup adcgrpcfg1 = {
   FALSE,
