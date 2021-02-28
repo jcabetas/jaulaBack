@@ -224,7 +224,7 @@ void sms::ponEstado(void)
 {
     char buff[30];
     float vBat, capBat;
-    if (estadoPuesto)
+    if (estadoPuesto==1)
         return;
     if (estadoJaulaClosed && !estadoJaulaOpened)
         addMsgRespuesta("Jaula cerrada");
@@ -302,7 +302,6 @@ void sms::interpretaSMS(uint8_t *textoSMS)
     uint8_t error;
 
     msgRespuesta[0] = 0;
-    estadoPuesto = 0;
     // compruebo que no hay caracteres raros
     for (i=0;i<strlen((char *)textoSMS);i++)
         if (!isprint((int) textoSMS[i]))
@@ -320,4 +319,5 @@ void sms::interpretaSMS(uint8_t *textoSMS)
         chsnprintf(bufferOrden,sizeof(bufferOrden),"No entiendo '%s'",textoSMS);
         addMsgRespuesta(bufferOrden);
     }
+    ponEstado();
 }

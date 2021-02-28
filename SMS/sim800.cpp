@@ -72,7 +72,7 @@ int8_t sms::sendSMS(char *msg, char *numTelefono)
     uint8_t hayError, huboTimeout, ch, bufferSMS[40];
     char bufferSendSMS[50];
     if (msg[0]==0 || numTelefono[0]==0) return -2;
-    chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"AT+CMGS=\"%s\"\r\n", numTelefono);
+    chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"AT+CMGS=\"%s\"\n", numTelefono);
     chMtxLock(&MtxEspSim800SMS);
     chnWrite(pSD, (const uint8_t *)bufferSendSMS, strlen(bufferSendSMS));
     while (1==1)
@@ -98,24 +98,26 @@ int8_t sms::sendSMS(char *msg, char *numTelefono)
     }
     // envio texto
     limpiaSerie(pSD, (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS));
-    chprintf((BaseSequentialStream  *) pSD, msg);
+    chnWrite(pSD,(uint8_t *) msg, strlen(msg));   // chprintf((BaseSequentialStream  *) pSD, msg);
     // termino con ^Z
     chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"%c",(char) 26);  //26 es CTRL-Z
 //    antes chsnprintf(bufferSendSMS,sizeof(bufferSendSMS),"%s%c", msg,(char) 26);  //26 es CTRL-Z
     hayError = modemOrden(pSD,bufferSendSMS, bufferSMS, sizeof(bufferSMS),TIME_MS2I(8000));
     chMtxUnlock(&MtxEspSim800SMS);
+    // borra datos mensaje, preparando para el proximo
+    borraMsgRespuesta();
     return hayError;
 }
 
-void sms::sendSMS(void)
+
+int8_t sms::sendSMS(void)
 {
     if (!msgRespuesta[0])
-        return;
+        return 2;
     if (telefonoRecibido[0])
-        sendSMS(msgRespuesta, telefonoRecibido);
+        return sendSMS(msgRespuesta, telefonoRecibido);
     else
-        sendSMS(msgRespuesta, telefonoAdmin);
-    borraMsgRespuesta();
+        return sendSMS(msgRespuesta, telefonoAdmin);
 }
 
 uint8_t sms::initSIM800SMS(void)
@@ -133,6 +135,7 @@ uint8_t sms::initSIM800SMS(void)
     rssiGPRS = 0;
     telefonoEnvio[0] = 0;
     proveedor[0] = 0;
+    durmiendo = 1;
     tiempoLastConexion = calendar::GetTimeUnixSec();
 
     // hardware init
@@ -143,8 +146,10 @@ uint8_t sms::initSIM800SMS(void)
     palClearPad(GPIOB, GPIOB_RESETSIM800);
     chThdSleepMilliseconds(150);
     palSetPad(GPIOB, GPIOB_RESETSIM800);
-    sdStart(&SD2,&ser_cfg);
+    sdStart((SerialDriver *) pSD,&ser_cfg);
 
+    // por si estaba durmiendo
+    despierta();
     // miro a ver si me responde
     numIntentos = 0;
     do
@@ -196,6 +201,8 @@ uint8_t sms::initSIM800SMS(void)
     modemOrden(pSD, "at+cmgl=\"ALL\"\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
     // SMS notification: memorizo aunque me llegaran notificaciones CMTI
     modemOrden(pSD, "at+cnmi=2,1,0,0,0\r\n", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS), TIME_MS2I(5000));
+    // me pongo a dormir
+    sleep();
     return 0;
 }
 
@@ -273,7 +280,12 @@ void sms::leoSmsCMTI(void)
             chsnprintf(bufferNxt,sizeof(bufferNxt),"at+cmgd=%d\r\n",numSMSaBorrar);
             hayError = modemOrden((BaseChannel *) pSD, bufferNxt, bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(500));
             if (!hayError)
+            {
+                borraMsgRespuesta();
                 procesaOrden(mensajeRecibido, &hayError);
+                ponEstado();
+                sendSMS();
+            }
         }
     } while (hayMensaje);
 //
@@ -379,7 +391,7 @@ void sms::sleep(void)
 void sms::despierta(void)
 {
     uint8_t buffer[20];
-    if (!bajoConsumo)
+    if (!durmiendo)
         return;
     chprintf((BaseSequentialStream *)pSD, "despierta!!\r\n");
     chThdSleepMilliseconds(200);
@@ -439,13 +451,6 @@ uint8_t sms::ponHoraConGprs(void)
         chMtxUnlock(&MtxEspSim800SMS);
         if (hayError!=0) return 1;
         osalThreadSleepMilliseconds(100);
-        // resetea modem
-//        msgParaLCD("Reseteo modem GPRS",400);
-//        //ponEnLCD(2,"Reseteo modem GPRS");
-//        chMtxLock(&MtxEspSim800SMS);
-//        hayError = modemOrden(pSD, "AT+CFUN=1,1\r\n", bufferGetsGPRS, sizeof(bufferGetsGPRS), TIME_MS2I(1000));
-//        chMtxUnlock(&MtxEspSim800SMS);
-//        msgParaLCD("Activada hora de red",500);
     }
     chMtxLock(&MtxEspSim800SMS);
     hayError = modemParametros(pSD,"AT+CCLK?\r\n","+CCLK:", bufferGetsGPRS, sizeof(bufferGetsGPRS),TIME_MS2I(1000),&numParametros, parametros);

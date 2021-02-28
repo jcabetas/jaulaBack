@@ -54,7 +54,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
     smsP->sleep();
 
     chEvtRegisterMask(&enviarSMS_source, &smsSend_listener,EVENT_MASK(0));
-    chEvtRegisterMaskWithFlags (chnGetEventSource(&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
+    chEvtRegisterMaskWithFlags (chnGetEventSource((SerialDriver *)smsP->pSD),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
 
     while (true)
     {
@@ -62,7 +62,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
         if (chThdShouldTerminateX())
         {
             chEvtUnregister(&enviarSMS_source, &smsSend_listener);
-            chEvtUnregister(chnGetEventSource(&SD2),&receivedData);
+            chEvtUnregister(chnGetEventSource((SerialDriver *)smsP->pSD),&receivedData);//SerialDriver *
             smsP->callReady = 0;
             smsP->smsReadyVal = 0;
             smsP->pinReady = 0;
@@ -95,17 +95,21 @@ static THD_FUNCTION(threadSMS, smsPtr) {
                 // +CMTI: "SM",5
                 if (!strncmp(bufferSendSMS,"+CMTI: ",6))
                 {
+                    chEvtUnregister(chnGetEventSource((SerialDriver *)smsP->pSD), &receivedData);
                     Str2Int((uint8_t *)&bufferSendSMS[12], &posSMS);
+                    smsP->despierta();
                     smsP->leoSmsCMTI();
+                    smsP->sleep();
+                    chEvtRegisterMaskWithFlags (chnGetEventSource ((SerialDriver *)smsP->pSD),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
                 }
                 // +CMT: "+34619262851","19/12/05,21:12:30+04"
                 else if (!strncmp(bufferSendSMS,"+CMT: ",6))
                 {
-                    chEvtUnregister(chnGetEventSource(&SD2), &receivedData);
+                    chEvtUnregister(chnGetEventSource((SerialDriver *)smsP->pSD), &receivedData);
                     smsP->despierta();
                     smsP->leoSMS(bufferSendSMS,sizeof(bufferSendSMS));
                     smsP->sleep();
-                    chEvtRegisterMaskWithFlags (chnGetEventSource (&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
+                    chEvtRegisterMaskWithFlags (chnGetEventSource ((SerialDriver *)smsP->pSD),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
                 }
                 else if (!strncmp(bufferSendSMS,"Call Ready",sizeof(bufferSendSMS)))
                 {
@@ -148,7 +152,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
         // Actualizo datos cada 20 segundos
         if (++dsQuery>=200)
         {
-            chEvtUnregister(chnGetEventSource(&SD2),&receivedData);
+            chEvtUnregister(chnGetEventSource((SerialDriver *)smsP->pSD),&receivedData);
             smsP->despierta();
             // comprueba conexion
             hayError = modemParametros((BaseChannel *)smsP->pSD,"AT+CREG?\r\n","+CREG:", (uint8_t *) bufferSendSMS, sizeof(bufferSendSMS),TIME_MS2I(5000),&numParametros, parametros);
@@ -210,7 +214,7 @@ static THD_FUNCTION(threadSMS, smsPtr) {
             }
             dsQuery = 0;
             smsP->sleep();
-            chEvtRegisterMaskWithFlags (chnGetEventSource(&SD2),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
+            chEvtRegisterMaskWithFlags (chnGetEventSource((SerialDriver *)smsP->pSD),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
         }
     }
 }

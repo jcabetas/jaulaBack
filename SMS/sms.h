@@ -36,9 +36,9 @@ private:
     char telefonoAdmin[50], pin[50];
     char mensajeRecibido[200];
     char msgRespuesta[200];
+    uint8_t estadoPuesto;
     char telefonoRecibido[16];
     char telefonoEnvio[16];
-    uint8_t estadoPuesto;
     uint8_t bajoConsumo;
     uint8_t durmiendo;
     mutex_t MtxEspSim800SMS;
@@ -76,7 +76,8 @@ public:
     uint8_t ponHoraConGprs(void);
     void interpretaSMS(uint8_t *textoSMS);
     int8_t sendSMS(char *msg, char *numTelefono);
-    void sendSMS(void);
+    int8_t sendSMSAdmin(void);
+    int8_t sendSMS(void);
     void sleep(void);
     void despierta(void);
     void trataOrdenNextion(char *vars[], uint16_t numPars);

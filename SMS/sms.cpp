@@ -24,7 +24,7 @@ extern "C"
 
 
 sms *smsModem = NULL;
-
+extern event_source_t enviarSMS_source;
 extern event_source_t registraLog_source;
 extern struct queu_t colaLog;
 
@@ -62,15 +62,20 @@ void haCambiadoGPRS(void)
 sms::sms(const char *numTelefAdminDefault, const char *pinDefault, BaseChannel *puertoSD, uint8_t bajoCons)
 {
     //  escribeStr50_C(&sectorNumTelef, "numTelef", "619262851");
+    mensajeRecibido[0] = 0;
+    msgRespuesta[0] = 0;
+    telefonoRecibido[0] = 0;
+    telefonoEnvio[0] = 0;
     bajoConsumo = bajoCons;
     durmiendo = 0;
+    estadoPuesto = 0;
     pSD = puertoSD;
     uint16_t sectorNumTelef = SECTORNUMTELEF;
     uint16_t sectorPin = SECTORPIN;
+    chEvtObjectInit(&enviarSMS_source);
+    chMtxObjectInit(&MtxEspSim800SMS);
     leeStr50(&sectorNumTelef, "numTelef", numTelefAdminDefault, telefonoAdmin);
     leeStr50(&sectorPin, "numPin", pinDefault, pin);
-    borraMsgRespuesta();
-    chMtxObjectInit(&MtxEspSim800SMS);
 }
 
 sms::~sms()
@@ -89,25 +94,18 @@ int8_t sms::init(void)
 void sms::borraMsgRespuesta(void)
 {
     msgRespuesta[0] = '\0';
-    telefonoRecibido[0] = 0;
-    telefonoEnvio[0] = 0;
+    estadoPuesto = 0;
 }
 
 void sms::addMsgRespuesta(const char *texto)
 {
     if (msgRespuesta[0])
-        strncat(msgRespuesta,". ",sizeof(msgRespuesta)-1);
+        strncat(msgRespuesta,"\n",sizeof(msgRespuesta)-1);
     strncat(msgRespuesta,texto,sizeof(msgRespuesta)-1);
 }
 
 void initSMS(void)
 {
-    char buffTest[50];
     smsModem = new sms("619262851","", (BaseChannel *)&SD2, 1);
     smsModem->init();
-    chThdSleepMilliseconds(2000);
-    strcpy(buffTest,"status");
-    smsModem->interpretaSMS((uint8_t *)buffTest);
-    strcpy(buffTest,"telefono=696994822");
-    smsModem->interpretaSMS((uint8_t *)buffTest);
 }

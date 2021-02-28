@@ -88,7 +88,7 @@ float hallaCapBat(float *vBat)
         if (*vBat<=lipoVoltCharge[n])
         {
             // se encuentra entre n-1 y n. Los escalones de carga son del 5%
-            float result = (n-1)*5.0f+5.0f*(lipoVoltCharge[n]-*vBat)/(lipoVoltCharge[n]-lipoVoltCharge[n-1]);
+            float result = (n-1)*5.0f+5.0f*(*vBat - lipoVoltCharge[n-1])/(lipoVoltCharge[n]-lipoVoltCharge[n-1]);
             return result;
         }
     return 999.9f; //

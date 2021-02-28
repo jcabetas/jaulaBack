@@ -9,6 +9,7 @@
 #include "ch.hpp"
 #include "hal.h"
 using namespace chibios_rt;
+#include "sms.h"
 
 extern "C"
 {
@@ -31,12 +32,14 @@ extern "C"
  */
 
 
-enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
 
+extern sms *smsModem;
+extern event_source_t enviarSMS_source;
 thread_t *procesoSensor;
 event_source_t jaulaint_event;
 event_listener_t elJaulaChanged;
 uint8_t estadoJaulaClosed, estadoJaulaOpened, estadoEnableEventJaulaClosed, estadoEnableEventJaulaOpened;
+enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
 enum estado_t estado;
 
 
@@ -188,7 +191,7 @@ static void jaulaChangedOpened_cb(void *)
  * sensores thread.
  * gestiona interrupciones de los sensores
  */
-static THD_WORKING_AREA(sensorint_wa, 128);
+static THD_WORKING_AREA(sensorint_wa, 512);
 static THD_FUNCTION(sensorint, p) {
   (void)p;
   eventmask_t evt;
@@ -213,11 +216,24 @@ static THD_FUNCTION(sensorint, p) {
     if (estado==gatoEnJaula)
     {
         // envia mensaje
+        if (smsModem==NULL)
+            continue;
+        smsModem->borraMsgRespuesta();
+        smsModem->addMsgRespuesta("Gato en jaula!!");
+        smsModem->ponEstado();
+        chEvtBroadcast(&enviarSMS_source);
         estado = avisado;
     }
     if (estado==atascada)
     {
         // envia mensaje
+        // envia mensaje
+        if (smsModem==NULL)
+            continue;
+        smsModem->borraMsgRespuesta();
+        smsModem->addMsgRespuesta("Puerta atascada!!");
+        smsModem->ponEstado();
+        chEvtBroadcast(&enviarSMS_source);
         estado = avisado;
     }
   }
