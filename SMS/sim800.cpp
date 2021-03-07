@@ -407,7 +407,10 @@ uint8_t sms::ponHoraConGprs(void)
 
 
 
-
+uint8_t sms::diSmsReady(void)
+{
+    return (estadoCREG==1);
+}
 
 
 

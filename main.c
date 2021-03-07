@@ -28,12 +28,29 @@ void initW25q16(void);
 void initSMS(void);
 void initSensores(void);
 void initAdc(void);
+float hallaCapBatC(void);
 
 enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
 extern enum estado_t estado;
+uint8_t okSMS(void);
+
+
+void tickLed(uint8_t numPuls, uint16_t msEntrePuls, stm32_gpio_t *GPIO, uint32_t PAD)
+{
+    for (uint8_t numP=0;numP<numPuls;numP++)
+    {
+        palClearPad(GPIO, PAD);         // enciende
+        chThdSleepMilliseconds(100);    // mantiene 100 ms
+        palSetPad(GPIO, PAD);           // apagado
+        if (numP<numPuls-1)             // si no es el ultimo, deja apagado 200 ms
+            chThdSleepMilliseconds(200);
+    }
+    chThdSleepMilliseconds(msEntrePuls);
+}
+
 
 /*
- * Green LED blinker thread, times are in milliseconds.
+ * Gestor led estados
  */
 static THD_WORKING_AREA(waThread1, 128);
 static THD_FUNCTION(Thread1, arg) {
@@ -50,15 +67,36 @@ static THD_FUNCTION(Thread1, arg) {
           estJaula = 0;
       uint16_t numPuls = numPulsos[estJaula];
       uint16_t msEntrePuls = msEntrePulsos[estJaula];
-      for (uint8_t numP=0;numP<numPuls;numP++)
-      {
-          palClearPad(GPIOC, GPIOC_LED); // enciende
-          chThdSleepMilliseconds(100);   // mantiene 100 ms
-          palSetPad(GPIOC, GPIOC_LED);   // apagado
-          if (numP<numPuls-1)            // si no es el ultimo, deja apagado 200 ms
-              chThdSleepMilliseconds(200);
-      }
-      chThdSleepMilliseconds(msEntrePuls);
+      tickLed(numPuls, msEntrePuls, GPIOB,GPIOB_LEDAMARILLO);
+  }
+}
+
+
+
+/*
+ * Gestor led alarma
+ */
+static THD_WORKING_AREA(waThreadAlarma, 128);
+static THD_FUNCTION(ThreadAlarma, arg) {
+  (void)arg;
+  // pulsos {noOkSIM, batBaja, atasco};
+  float capBat;
+  uint8_t alarmaBat;
+  chRegSetThreadName("alarma");
+  capBat = hallaCapBatC();
+  if (capBat<20.0)
+      alarmaBat = 1;
+  else
+      alarmaBat = 0;
+  while (true) {
+      uint8_t estJaula = estado;
+      if (!okSMS())
+          tickLed(1, 1000,GPIOB,GPIOB_LEDROJO);
+      if (alarmaBat==1)
+          tickLed(2, 1000,GPIOB,GPIOB_LEDROJO);
+      if (estJaula==5)
+          tickLed(3, 1000,GPIOB,GPIOB_LEDROJO);
+      chThdSleepMilliseconds(3000);
   }
 }
 
@@ -99,6 +137,7 @@ int main(void) {
    */
 
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+  chThdCreateStatic(waThreadAlarma, sizeof(waThreadAlarma), NORMALPRIO, ThreadAlarma, NULL);
 
 //  sectorNumTelef = 1;
 //  escribeStr50_C(&sectorNumTelef, "numTelef", "619262851");

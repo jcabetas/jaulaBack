@@ -10,6 +10,7 @@ extern "C"
 {
     void pruebaADC(void);
     void initAdc(void);
+    float hallaCapBatC(void);
 }
 
 //                       0%      5%    10%    15%    20%    25%    30%    35%   40%     45%    50%
@@ -90,6 +91,13 @@ float hallaCapBat(float *vBat)
             return result;
         }
     return 999.9f; //
+}
+
+float hallaCapBatC(void)
+{
+    float vBat;
+    leeTension(&vBat);
+    return hallaCapBat(&vBat);
 }
 
 void pruebaADC(void)

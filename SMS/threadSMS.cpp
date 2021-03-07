@@ -23,6 +23,17 @@ event_source_t enviarSMS_source;
 extern sms *smsModem;
 BaseChannel  *pSDSMS;
 
+extern "C"{
+    uint8_t okSMS(void);
+}
+
+uint8_t okSMS(void)
+{
+    if (smsModem==NULL)
+        return 0;
+    return smsModem->diSmsReady();
+}
+
 /*
  * Proceso SMS
  * Escucha para eventos de enviar SMS, y de vez en cuando busca SMS y la fecha del sistema y estado de comunicaciones

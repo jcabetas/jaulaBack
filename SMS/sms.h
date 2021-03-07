@@ -73,6 +73,7 @@ public:
     void initThreadSMS(void);
     const char *diTelefonoAdmin(void);
     const char *diMsgRespuesta(void);
+    uint8_t diSmsReady(void);
     uint8_t ponHoraConGprs(void);
     void interpretaSMS(uint8_t *textoSMS);
     int8_t sendSMS(char *msg, char *numTelefono);

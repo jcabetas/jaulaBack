@@ -93,8 +93,8 @@
 #define GPIOB_PIN9                   9U
 #define GPIOB_PIN10                 10U
 #define GPIOB_PIN11                 11U
-#define GPIOB_PIN12                 12U
-#define GPIOB_PIN13                 13U
+#define GPIOB_LEDROJO               12U
+#define GPIOB_LEDAMARILLO           13U
 #define GPIOB_PIN14                 14U
 #define GPIOB_PIN15                 15U
 
@@ -245,7 +245,7 @@
 #define LINE_B1_VBAT                PAL_LINE(GPIOB, 1U)
 #define LINE_SWO                    PAL_LINE(GPIOB, 3U)
 #define LINE_ARD_D3                 PAL_LINE(GPIOB, 3U)
-#define LINE_B4         PAL_LINE(GPIOB, 4U)
+#define LINE_B4                     PAL_LINE(GPIOB, 4U)
 #define LINE_ARD_D4                 PAL_LINE(GPIOB, 5U)
 #define LINE_ARD_D10                PAL_LINE(GPIOB, 6U)
 #define LINE_ARD_D15                PAL_LINE(GPIOB, 8U)
@@ -434,8 +434,8 @@
  * PB9  - GPIOB_PIN9                   (input analog).
  * PB10 - GPIOB_PIN10                  (input analog).
  * PB11 - GPIOB_PIN11                  (input analog).
- * PB12 - GPIOB_PIN12                  (input analog).
- * PB13 - GPIOB_PIN13                  (input analog).
+ * PB12 - GPIOB_LEDROJO                (output pushpull).
+ * PB13 - GPIOB_LEDAMARILLO            (output pushpull).
  * PB14 - GPIOB_PIN14                  (input analog).
  * PB15 - GPIOB_PIN15                  (input analog).
  */
@@ -451,8 +451,8 @@
                                      PIN_MODE_ANALOG(GPIOB_PIN9) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN10) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN11) |           \
-                                     PIN_MODE_ANALOG(GPIOB_PIN12) |           \
-                                     PIN_MODE_ANALOG(GPIOB_PIN13) |           \
+                                     PIN_MODE_OUTPUT(GPIOB_LEDROJO) |           \
+                                     PIN_MODE_OUTPUT(GPIOB_LEDAMARILLO) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN14) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN15))
 #define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(GPIOB_RESETSIM800) |     \
@@ -467,8 +467,8 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN9) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN10) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN11) |     \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN12) |     \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN13) |     \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_LEDROJO) |     \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_LEDAMARILLO) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN14) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN15))
 #define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_HIGH(GPIOB_RESETSIM800) |        \
@@ -483,8 +483,8 @@
                                      PIN_OSPEED_HIGH(GPIOB_PIN9) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN10) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN11) |        \
-                                     PIN_OSPEED_HIGH(GPIOB_PIN12) |        \
-                                     PIN_OSPEED_HIGH(GPIOB_PIN13) |        \
+                                     PIN_OSPEED_HIGH(GPIOB_LEDROJO) |        \
+                                     PIN_OSPEED_HIGH(GPIOB_LEDAMARILLO) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN14) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN15))
 #define VAL_GPIOB_PUPDR             (PIN_PUPDR_PULLUP(GPIOB_RESETSIM800) |       \
@@ -499,8 +499,8 @@
                                      PIN_PUPDR_PULLUP(GPIOB_PIN9) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN10) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN11) |       \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN12) |       \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN13) |       \
+                                     PIN_PUPDR_PULLUP(GPIOB_LEDROJO) |       \
+                                     PIN_PUPDR_PULLUP(GPIOB_LEDAMARILLO) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN14) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN15))
 #define VAL_GPIOB_ODR               (PIN_ODR_HIGH(GPIOB_RESETSIM800) |           \
@@ -515,8 +515,8 @@
                                      PIN_ODR_HIGH(GPIOB_PIN9) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN10) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN11) |           \
-                                     PIN_ODR_HIGH(GPIOB_PIN12) |           \
-                                     PIN_ODR_HIGH(GPIOB_PIN13) |           \
+                                     PIN_ODR_HIGH(GPIOB_LEDROJO) |           \
+                                     PIN_ODR_HIGH(GPIOB_LEDAMARILLO) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN15))
 #define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_RESETSIM800, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_VBAT, 0U) |        \
@@ -530,8 +530,8 @@
                                      PIN_AFIO_AF(GPIOB_PIN9, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN10, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN11, 0U) |        \
-                                     PIN_AFIO_AF(GPIOB_PIN12, 0U) |        \
-                                     PIN_AFIO_AF(GPIOB_PIN13, 0U) |        \
+                                     PIN_AFIO_AF(GPIOB_LEDROJO, 0U) |        \
+                                     PIN_AFIO_AF(GPIOB_LEDAMARILLO, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN14, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN15, 0U))
 /*
