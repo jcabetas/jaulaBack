@@ -73,7 +73,7 @@
 #define GPIOA_SPI1_MISO              6U
 #define GPIOA_SPI1_MOSI              7U
 #define GPIOA_JAULACLOSED            8U
-#define GPIOA_JAULAOPENED              9U
+#define GPIOA_JAULAOPENED            9U
 #define GPIOA_PIN10                 10U
 #define GPIOA_OTG_FS_DM             11U
 #define GPIOA_OTG_FS_DP             12U
@@ -85,9 +85,9 @@
 #define GPIOB_VBAT                   1U
 #define GPIOB_PIN2                   2U
 #define GPIOB_PIN3                   3U
-#define GPIOB_PIN4                   4U
+#define GPIOB_MOSFET                 4U
 #define GPIOB_PIN5                   5U
-#define GPIOB_PIN6                   6U
+#define GPIOB_PWMSERVO               6U
 #define GPIOB_PIN7                   7U
 #define GPIOB_PIN8                   8U
 #define GPIOB_PIN9                   9U
@@ -443,9 +443,9 @@
                                      PIN_MODE_ANALOG(GPIOB_VBAT) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN2) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN3) |           \
-                                     PIN_MODE_ANALOG(GPIOB_PIN4) |           \
+                                     PIN_MODE_ANALOG(GPIOB_MOSFET) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN5) |           \
-                                     PIN_MODE_ANALOG(GPIOB_PIN6) |           \
+                                     PIN_MODE_ANALOG(GPIOB_PWMSERVO) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN7) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN8) |           \
                                      PIN_MODE_ANALOG(GPIOB_PIN9) |           \
@@ -459,9 +459,9 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_VBAT) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN2) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN3) |     \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN4) |     \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_MOSFET) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN5) |     \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN6) |     \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_PWMSERVO) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN7) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN8) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN9) |     \
@@ -475,9 +475,9 @@
                                      PIN_OSPEED_HIGH(GPIOB_VBAT) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN2) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN3) |        \
-                                     PIN_OSPEED_HIGH(GPIOB_PIN4) |        \
+                                     PIN_OSPEED_HIGH(GPIOB_MOSFET) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN5) |        \
-                                     PIN_OSPEED_HIGH(GPIOB_PIN6) |        \
+                                     PIN_OSPEED_HIGH(GPIOB_PWMSERVO) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN7) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN8) |        \
                                      PIN_OSPEED_HIGH(GPIOB_PIN9) |        \
@@ -491,9 +491,9 @@
                                      PIN_PUPDR_FLOATING(GPIOB_VBAT) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN2) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN3) |       \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN4) |       \
+                                     PIN_PUPDR_PULLUP(GPIOB_MOSFET) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN5) |       \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN6) |       \
+                                     PIN_PUPDR_PULLUP(GPIOB_PWMSERVO) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN7) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN8) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN9) |       \
@@ -507,9 +507,9 @@
                                      PIN_ODR_HIGH(GPIOB_VBAT) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN2) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN3) |           \
-                                     PIN_ODR_HIGH(GPIOB_PIN4) |           \
+                                     PIN_ODR_HIGH(GPIOB_MOSFET) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN5) |           \
-                                     PIN_ODR_HIGH(GPIOB_PIN6) |           \
+                                     PIN_ODR_HIGH(GPIOB_PWMSERVO) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN7) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN8) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN9) |           \
@@ -522,9 +522,9 @@
                                      PIN_AFIO_AF(GPIOB_VBAT, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN2, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN3, 0U) |        \
-                                     PIN_AFIO_AF(GPIOB_PIN4, 0U) |        \
+                                     PIN_AFIO_AF(GPIOB_MOSFET, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN5, 0U) |        \
-                                     PIN_AFIO_AF(GPIOB_PIN6, 0U) |        \
+                                     PIN_AFIO_AF(GPIOB_PWMSERVO, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN7, 0U))
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_PIN8, 0U) |        \
                                      PIN_AFIO_AF(GPIOB_PIN9, 0U) |        \

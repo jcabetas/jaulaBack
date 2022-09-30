@@ -83,7 +83,7 @@ endif
 #
 
 # Define project name here
-PROJECT = jaula
+PROJECT = alimCalle
 
 # Target settings.
 MCU  = cortex-m4
@@ -125,7 +125,7 @@ LDSCRIPT= $(STARTUPLD)/STM32F411xE.ld
 CSRC = $(ALLCSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/syscalls.c \
-       main.c
+       main.c sleep.c servoPWM.c
 #       $(CONFDIR)/portab.c usbcfg.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

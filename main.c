@@ -17,141 +17,82 @@
 #include "ch.h"
 #include "hal.h"
 #include "varsFlash.h"
-
-//#include "portab.h"
-//#include "usbcfg.h"
-
-//#define ttyUSB (BaseSequentialStream *)&PORTAB_SDU1
-//void initSerialUSB(void);
-void pruebaADC(void);
-void initW25q16(void);
-void initSMS(void);
-void initSensores(void);
-void initAdc(void);
-float hallaCapBatC(void);
-
-enum estado_t {esperoApertura=1, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
-extern enum estado_t estado;
-uint8_t okSMS(void);
-
-
-void tickLed(uint8_t numPuls, uint16_t msEntrePuls, stm32_gpio_t *GPIO, uint32_t PAD)
-{
-    for (uint8_t numP=0;numP<numPuls;numP++)
-    {
-        palClearPad(GPIO, PAD);         // enciende
-        chThdSleepMilliseconds(100);    // mantiene 100 ms
-        palSetPad(GPIO, PAD);           // apagado
-        if (numP<numPuls-1)             // si no es el ultimo, deja apagado 200 ms
-            chThdSleepMilliseconds(200);
-    }
-    chThdSleepMilliseconds(msEntrePuls);
-}
-
+#include "alimCalle.h"
 
 /*
- * Gestor led estados
- */
-static THD_WORKING_AREA(waThread1, 128);
-static THD_FUNCTION(Thread1, arg) {
-  (void)arg;
-  // numPulsos, interv. Por ejemplo 2,700 seria 100on,200off,100on,700off
-  //enum estado_t {esperoApertura, abiertoTemporizando, esperoGato, cayendoPuerta, atascada, gatoEnJaula, avisado};
-  //                  1,100             2,500            1,2900       1,100        3,500       2,2600      3,2300
-  uint16_t numPulsos[] =     {  1,  1,  2,  1,   1,  3,   2,  3};
-  uint16_t msEntrePulsos[] = {100,100,500,2900,100,500,2900,2900};
-  chRegSetThreadName("blinker");
-  while (true) {
-      uint8_t estJaula = estado;
-      if (estJaula>7)
-          estJaula = 0;
-      uint16_t numPuls = numPulsos[estJaula];
-      uint16_t msEntrePuls = msEntrePulsos[estJaula];
-      tickLed(numPuls, msEntrePuls, GPIOB,GPIOB_LEDAMARILLO);
-  }
-}
-
-
-
-/*
- * Gestor led alarma
- */
-static THD_WORKING_AREA(waThreadAlarma, 128);
-static THD_FUNCTION(ThreadAlarma, arg) {
-  (void)arg;
-  // pulsos {noOkSIM, batBaja, atasco};
-  float capBat;
-  uint8_t alarmaBat;
-  chRegSetThreadName("alarma");
-  capBat = hallaCapBatC();
-  if (capBat<20.0)
-      alarmaBat = 1;
-  else
-      alarmaBat = 0;
-  while (true) {
-      uint8_t estJaula = estado;
-      if (!okSMS())
-          tickLed(1, 1000,GPIOB,GPIOB_LEDROJO);
-      if (alarmaBat==1)
-          tickLed(2, 1000,GPIOB,GPIOB_LEDROJO);
-      if (estJaula==5)
-          tickLed(3, 1000,GPIOB,GPIOB_LEDROJO);
-      chThdSleepMilliseconds(3000);
-  }
-}
-
-/*
- * Application entry point.
+ * Prueba de alimentador
+ *
+ * BUCLE
+ * - Enciende led placa
+ * - Abre tapa (servo=3000)
+ * - Espera 3s y apaga el led y el servo
+ * - Pone a dormir el STM32 por 30s, o hasta que se pulse KEY en la placa
+ * - Enciende el led y el servo
+ * - Cierra tapa (servo=6000)
+ * - Apaga led y servo
+ * - Pone a dormir el STM32 por 30s, o hasta que se pulse KEY en la placa
+ *
+ * HARDWARE
+ * - Blackpill
+ * - Pin B4 (GPIOB_MOSFET) unido con resistencia a gate del MOSFET-P, activo Low
+ * - Pin B6 (GPIOB_PWMSERVO) salida PWM al servo
+ * - Pin C13 (GPIOC_LED) es el led de la placa, activo Low
+ * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
+ * - Mosfet-P Source a la batería
+ * - Mosfet-P drenador al + del servo
+ *
  */
 int main(void) {
-  /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
+
   halInit();
   chSysInit();
 
+  // prueba sleep
+  ports_set_normal();
+  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+  chThdSleepMilliseconds(1000);
+  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+  uint8_t pinA0 = palReadPad(GPIOA, GPIOA_KEY);
+  //ports_set_lowpower();
+  sleep_for_x_sec(10);
+  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+  chThdSleepMilliseconds(1000);
 
-  /*
-   * Activates the serial driver 2 using the driver default configuration.
-   */
-  /*
-   * Initializes serial-over-USB CDC drivers.
-   */
-//  sduObjectInit(&SDU1);
-//  sduStart(&SDU1, &serusbcfg);
+  // Otra vez
+  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+  pinA0 = palReadPad(GPIOA, GPIOA_KEY);
+ // ports_set_lowpower();
+  sleep_for_x_sec(10);
+  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+  chThdSleepMilliseconds(1000);
 
-  /*
-   * Activo USB
-   */
-//  initSerialUSB();
-  initAdc();
-  initSensores();
-  initW25q16();
-  initSMS();
-  /*
-   * Creates the blinker thread.
-   */
 
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-  chThdCreateStatic(waThreadAlarma, sizeof(waThreadAlarma), NORMALPRIO, ThreadAlarma, NULL);
+  initServo();
+  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+  palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+  chThdSleepMilliseconds(2000);
 
-//  sectorNumTelef = 1;
-//  escribeStr50_C(&sectorNumTelef, "numTelef", "619262851");
-//  leeStr50_C(&sectorNumTelef, "numTelef", "000000", numTlf);
+  while (1)
+  {
+    palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+    palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+    mueveServoAncho(3000);            // abre tapa
 
-  /*
-   * Normal main() thread activity, in this demo it does nothing except
-   * sleeping in a loop and check the button state.
-   */
-  while (true) {
-    if (!palReadPad(GPIOA, GPIOA_KEY)) {
-        chThdSleepMilliseconds(500);
-        //pruebaADC();
-    }
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(2000);
+    palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+    palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+
+    sleep_for_x_sec(5);
+    //chThdSleepMilliseconds(3000);
+
+    palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+    palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+    mueveServoAncho(6000);            // cierra tapa
+    chThdSleepMilliseconds(3000);
+    palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+    palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+
+    sleep_for_x_sec(5);
+    //chThdSleepMilliseconds(3000);
   }
 }
