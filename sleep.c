@@ -78,9 +78,9 @@ uint8_t sleep_for_x_sec(uint16_t nb_sec)
   wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
   rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-  ports_set_lowpower();                                 // Set ports for low power
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
+  //ports_set_lowpower();                                 // Set ports for low power
+//  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
+//  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
 
 //  DBGMCU->CR = DBGMCU_CR_DBG_STOP;                      // Allow debug in Stop mode: +130uA !!!
 
@@ -94,8 +94,8 @@ uint8_t sleep_for_x_sec(uint16_t nb_sec)
   __disable_irq();
   chSysEnable();
 
-  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;                    // Low power mode in deep sleep
-  PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
+ // SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;                    // Low power mode in deep sleep
+//  PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
 
 // -----------------------------------------------------
                                                         //
@@ -121,21 +121,21 @@ uint8_t sleep_for_x_sec(uint16_t nb_sec)
   palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
   palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
+ // SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
 
-  PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
+  //PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
   //LPUART1->ICR |= USART_ICR_PECF;                       // Clear Parity error
 
 //  chSysUnlock();
 //  chSysDisable();                             // No effect
 
- // stm32_clock_init();                                   // Re-init RCC and power, Important
+ // stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
   __enable_irq();                               // No effect
 
   SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
   palDisableLineEvent(LINE_A0_KEY);
 
-  ports_set_normal();
+  //ports_set_normal();
   return wakeup_source;
 }
 
