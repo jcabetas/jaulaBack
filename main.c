@@ -42,81 +42,44 @@
  * - Mosfet-P drenador al + del servo
  *
  */
+
 int main(void) {
 
   halInit();
   chSysInit();
 
 // prueba servo
-  ports_set_normal();
+  ports_set_lowpower();
   initServo();
-  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-  palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
-  mueveServoAncho(3000);            // abre tapa
-  chThdSleepMilliseconds(2000);
-  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-  palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
-
-  sleep_for_x_sec(5);
-
-//  initServo();
-  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-  palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
-  mueveServoAncho(5000);            // cierra tapa
-  chThdSleepMilliseconds(2000);
-  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-  palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
-
-
-
-  /*
-  // prueba sleep
-  ports_set_normal();
-  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-  chThdSleepMilliseconds(1000);
-  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-  uint8_t pinA0 = palReadPad(GPIOA, GPIOA_KEY);
-  //ports_set_lowpower();
-  sleep_for_x_sec(10);
-  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-  chThdSleepMilliseconds(1000);
-
-  // Otra vez
-  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-  pinA0 = palReadPad(GPIOA, GPIOA_KEY);
-  sleep_for_x_sec(10);
-  palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-  chThdSleepMilliseconds(1000);
-*/
-
-//  initServo();
-  palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-  palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
-  chThdSleepMilliseconds(1000);
-
+  // vienes de despertar de un standby?
+  if ((PWR->CSR) && PWR_CSR_SBF)
+  {
+    for (uint8_t i=0;i<10;i++)
+    {
+      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+      chThdSleepMilliseconds(200);
+      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+      chThdSleepMilliseconds(200);
+    }
+  }
   while (1)
   {
-    palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-    palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
-    mueveServoAncho(2000);            // abre tapa
-    sleep_for_x_sec(2);
-    palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-    palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+      palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+      mueveServoAncho(3000);            // abre tapa
+      chThdSleepMilliseconds(2000);
+      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+      palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+      stop(8);
+      initServo();
 
-    //chThdSleepMilliseconds(3000);
-    sleep_for_x_sec(5);
- //   initServo();
-
-    palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-    palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
-    mueveServoAncho(6000);            // cierra tapa
-    sleep_for_x_sec(2);
-    palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-    palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
-
-    //chThdSleepMilliseconds(3000);
-    sleep_for_x_sec(5);
- //   initServo();
-    //chThdSleepMilliseconds(3000);
+      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+      palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+      mueveServoAncho(5000);            // cierra tapa
+      chThdSleepMilliseconds(2000);
+      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+      palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+      stop(8);
+      initServo();
   }
 }
