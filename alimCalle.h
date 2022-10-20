@@ -18,4 +18,5 @@ void ports_set_lowpower(void);
 void ports_set_normal(void);
 void initW25q16(void);
 
+
 #endif /* ALIMCALLE_H_ */

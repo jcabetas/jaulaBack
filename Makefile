@@ -130,7 +130,7 @@ CSRC = $(ALLCSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC) 
+CPPSRC = $(ALLCPPSRC) sensor.cpp lcd/lcd.cpp lcd/threadLCD.cpp
 #         ADC/adcUtils.cpp \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
          SMS/sms.cpp SMS/manejaAT.cpp SMS/sim800.cpp  SMS/procesaOrden.cpp SMS/threadSMS.cpp \
@@ -144,7 +144,7 @@ ASMSRC = $(ALLASMSRC)
 ASMXSRC = $(ALLXASMSRC)
 
 # Inclusion directories.
-INCDIR = $(CONFDIR) $(ALLINC) 
+INCDIR = $(CONFDIR) $(ALLINC) lcd
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes

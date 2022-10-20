@@ -18,6 +18,10 @@
 #include "hal.h"
 #include "varsFlash.h"
 #include "alimCalle.h"
+#include "lcd.h"
+
+
+void initSensores(void);
 
 /*
  * Prueba de alimentador
@@ -31,22 +35,53 @@
  * - Cierra tapa (servo=6000)
  * - Apaga led y servo
  * - Pone a dormir el STM32 por 30s, o hasta que se pulse KEY en la placa
+ * - Si hay interrupcion sensor, activa led rojo (B5) por 2 ms
  *
  * HARDWARE
  * - Blackpill
  * - Pin B4 (GPIOB_MOSFET) unido con resistencia a gate del MOSFET-P, activo Low
  * - Pin B6 (GPIOB_PWMSERVO) salida PWM al servo
+ * - Pin PB8 (GPIOB_I2C1SCL) para LCD, ALT04
+ * - Pin PB9 (GPIOB_I2C1SDA) para LCD, ALT04
  * - Pin C13 (GPIOC_LED) es el led de la placa, activo Low
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
  * - Mosfet-P Source a la batería
  * - Mosfet-P drenador al + del servo
- *
+ * - Pin A8 (GPIOA_GATETRIAC) TIM1CH1 a puerta de triac
+ * - Pin A9 (GPIOA_ZC) Sensor paso por cero, activo bajo
  */
 
-int main(void) {
+volatile uint8_t msDelayLed = 1;
+volatile uint16_t numCuentas;
+extern uint16_t usRetraso;
+uint16_t p2us[21] = {9200, 8564, 7951, 7468, 7048, 6666, 6309, 5969, 5640, 5318, 5000, 4681, 4359, 4030, 3690, 3333, 2951, 2531, 2048, 1435, 100 };
 
+
+int main(void) {
+  systime_t old1;
   halInit();
   chSysInit();
+  uint8_t posP = 0;
+
+  // LCD Test
+  initLCD();
+  ponEnLCDC(0,"Hola");
+
+  initSensores();
+  while (1==1) {
+    if (msDelayLed<9)
+      msDelayLed++;
+    else
+      msDelayLed = 1;
+//    systime_t now1 = chVTGetSystemTimeX();
+//    uint16_t us = TIME_I2MS(now1-old1);
+//    old1 = now1;
+    chThdSleepMilliseconds(10000);
+    usRetraso = p2us[posP];
+    chLcdprintfFilaC(0,"posP:%d us:%d",posP,usRetraso);
+    if (++posP>20)
+      posP = 0;
+  };
 
 // prueba servo
   ports_set_lowpower();
