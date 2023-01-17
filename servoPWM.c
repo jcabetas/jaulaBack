@@ -13,27 +13,25 @@
 
 static PWMConfig pwmcfg = {
   3125000, /* 48 MHz PWM clock frequency */
-    60000,   /* PWM period 20 millisecond */
+    62500,   /* PWM period 20 millisecond */
   NULL,  /* No callback */
-  /* Channel 1 enabled */
+  /* Channel 3 enabled */
   {
+    {PWM_OUTPUT_DISABLED, NULL},
+    {PWM_OUTPUT_DISABLED, NULL},
+    {PWM_OUTPUT_DISABLED, NULL},
     {PWM_OUTPUT_ACTIVE_HIGH, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
   },
   0,
   0
 };
 
-
-
 void initServo(void)
 {
 /*
- *   Salida servo: TIM4CH1 (PB6)
+ *   Salida servo: TIM4CH3 (PB8)
  */
-    palSetPadMode(IOPORT2, 6,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
+    palSetPadMode(IOPORT2, 8,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
 	//palSetPadMode(IOPORT2, 6, PAL_MODE_ALTERNATE_PUSHPULL);
 	pwmStart(&PWMD4, &pwmcfg);
 	mueveServoAncho(4529);

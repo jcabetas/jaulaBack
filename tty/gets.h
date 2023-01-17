@@ -20,5 +20,6 @@ uint8_t chgetchTimeOut(BaseChannel  *SD, systime_t timeout, uint8_t *huboTimeout
 void limpiaBuffer(BaseChannel *pSD);
 void chgetsNoEchoTimeOut(BaseChannel  *pSD, uint8_t *buffer, uint16_t bufferSize,systime_t timeout, uint8_t *huboTimeout);
 void chgetNextionNoEchoTimeOut(BaseChannel  *pSD, uint8_t *buffer, uint16_t bufferSize,systime_t timeout, uint16_t *numBytes, uint8_t *huboTimeout);
+void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam);
 
 #endif /* GETS_H_ */

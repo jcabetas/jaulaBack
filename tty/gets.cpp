@@ -323,3 +323,20 @@ int16_t preguntaNumero(BaseChannel *ttyBC, char *msg, uint32_t *numeroPtr, uint3
     *numeroPtr = resultado;
     return 0;
 }
+
+
+void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam)
+{
+    char *puntOut,*puntStr;
+    *numParam=0;
+    puntOut = cadena;
+    do
+    {
+        puntStr = strsep(&puntOut,tokens);
+        if (puntStr)
+        {
+            parametros[*numParam] = puntStr;
+            (*numParam)++;
+        }
+    } while (puntStr);
+}

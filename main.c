@@ -22,6 +22,8 @@
 
 
 void initSensores(void);
+void leeAlGPS(void);
+extern uint8_t enHora, hayUbicacion;
 
 /*
  * Prueba de alimentador
@@ -57,38 +59,52 @@ extern uint16_t usRetraso;
 uint16_t p2us[21] = {9200, 8564, 7951, 7468, 7048, 6666, 6309, 5969, 5640, 5318, 5000, 4681, 4359, 4030, 3690, 3333, 2951, 2531, 2048, 1435, 100 };
 
 
+///*
+// * This is a periodic thread that does absolutely nothing except flashing
+// * a LED.
+// */
+//static THD_WORKING_AREA(waThread1, 128);
+//static THD_FUNCTION(Thread1, arg) {
+//  (void)arg;
+//  uint16_t msDelay = 200;
+//  chRegSetThreadName("blinker");
+//  while (true) {
+//      if (enHora==1)
+//          msDelay = 4700;
+//      else
+//          msDelay = 500;
+//    palSetPad(GPIOC, GPIOC_LED);
+//    chThdSleepMilliseconds(msDelay);
+//    palClearPad(GPIOC, GPIOC_LED);
+//    chThdSleepMilliseconds(1);
+//    if (hayUbicacion)
+//    {
+//        palSetPad(GPIOC, GPIOC_LED);
+//        chThdSleepMilliseconds(299);
+//        palClearPad(GPIOC, GPIOC_LED);
+//        chThdSleepMilliseconds(1);
+//    }
+//    else
+//        chThdSleepMilliseconds(300);
+//  }
+//}
+
 int main(void) {
-  systime_t old1;
   halInit();
   chSysInit();
-  uint8_t posP = 0;
 
-  // LCD Test
-  initLCD();
-  ponEnLCDC(0,"Hola");
-
-  initSensores();
-  while (1==1) {
-    if (msDelayLed<9)
-      msDelayLed++;
-    else
-      msDelayLed = 1;
-//    systime_t now1 = chVTGetSystemTimeX();
-//    uint16_t us = TIME_I2MS(now1-old1);
-//    old1 = now1;
-    chThdSleepMilliseconds(10000);
-    usRetraso = p2us[posP];
-    chLcdprintfFilaC(0,"posP:%d us:%d",posP,usRetraso);
-    if (++posP>20)
-      posP = 0;
-  };
-
-// prueba servo
-  ports_set_lowpower();
+  // chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+//  ports_set_lowpower();
+  leeAlGPS(); // leer GPS
+  while (!enHora) // espero a que termine
+  {
+      chThdSleepMilliseconds(200);
+  }
   initServo();
   // vienes de despertar de un standby?
   if ((PWR->CSR) && PWR_CSR_SBF)
   {
+    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
     for (uint8_t i=0;i<10;i++)
     {
       palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
@@ -96,24 +112,33 @@ int main(void) {
       palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
       chThdSleepMilliseconds(200);
     }
+    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_INPUT_ANALOG);
+  }
+  else
+  {
+      leeAlGPS(); // lanza proceso para leer GPS
+      while (!enHora) // espero a que termine
+      {
+          chThdSleepMilliseconds(200);
+      }
   }
   while (1)
   {
       palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-      palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
       mueveServoAncho(3000);            // abre tapa
       chThdSleepMilliseconds(2000);
       palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-      palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
       stop(8);
       initServo();
 
       palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-      palClearPad(GPIOB, GPIOB_MOSFET); // da tension al servo
+      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
       mueveServoAncho(5000);            // cierra tapa
       chThdSleepMilliseconds(2000);
       palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-      palSetPad(GPIOB, GPIOB_MOSFET); // quita tension al servo
+      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
       stop(8);
       initServo();
   }

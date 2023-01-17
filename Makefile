@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16 -lm
 endif
 
 # C specific options here (added to USE_OPT).
@@ -125,12 +125,12 @@ LDSCRIPT= $(STARTUPLD)/STM32F411xE.ld
 CSRC = $(ALLCSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/syscalls.c \
-       main.c sleep.c servoPWM.c
+       main.c sleep.c servoPWM.c 
 #       $(CONFDIR)/portab.c usbcfg.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC) sensor.cpp lcd/lcd.cpp lcd/threadLCD.cpp
+CPPSRC = $(ALLCPPSRC) sensor.cpp lcd/lcd.cpp lcd/threadLCD.cpp calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp
 #         ADC/adcUtils.cpp \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
          SMS/sms.cpp SMS/manejaAT.cpp SMS/sim800.cpp  SMS/procesaOrden.cpp SMS/threadSMS.cpp \
@@ -167,7 +167,7 @@ UDEFS = -DCHPRINTF_USE_FLOAT=TRUE
 UADEFS =
 
 # List all user directories here
-UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg ADC w25q16 SMS tty calendar
+UINCDIR = $(CHIBIOS)/os/hal/lib/streams usbSource cfg ADC w25q16 SMS tty calendarUTC
 
 # List the user directory to look for the libraries here
 ULIBDIR =
