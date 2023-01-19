@@ -40,21 +40,20 @@ void ports_set_lowpower(void)
          palSetPadMode( GPIOA, i,PAL_MODE_INPUT_ANALOG );
 //       if (i!=GPIOB_MOSFET && i!=GPIOB_PWMSERVO && i!=GPIOB_I2C1SCL  && i!=GPIOB_I2C1SDA)
 //         palSetPadMode( GPIOB, i,PAL_MODE_INPUT_ANALOG );
-       if (i!=GPIOC_LED)
-         palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
+       palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOD, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOE, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOH, ( i % 2 ),PAL_MODE_INPUT_ANALOG );
    }
-  palSetLineMode(LINE_A0_KEY,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+  //palSetLineMode(LINE_A0_KEY,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 //  palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
 //  palSetPadMode(GPIOB, GPIOB_MOSFET, PAL_MODE_OUTPUT_PUSHPULL);
 //palSetPadMode(GPIOB, GPIOB_LEDROJO, PAL_MODE_OUTPUT_PUSHPULL);
-  palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);    /* PWM*/
-  palSetPadMode(GPIOB, GPIOB_I2C1SCL,PAL_MODE_ALTERNATE(4) | PAL_STM32_OSPEED_HIGHEST);    /* I2C1SCL*/
-  palSetPadMode(GPIOB, GPIOB_I2C1SDA,PAL_MODE_ALTERNATE(4) | PAL_STM32_OSPEED_HIGHEST);    /* I2C1SDA*/
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
+  //palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);    /* PWM*/
+//  palSetPadMode(GPIOB, GPIOB_I2C1SCL,PAL_MODE_ALTERNATE(4) | PAL_STM32_OSPEED_HIGHEST);    /* I2C1SCL*/
+//  palSetPadMode(GPIOB, GPIOB_I2C1SDA,PAL_MODE_ALTERNATE(4) | PAL_STM32_OSPEED_HIGHEST);    /* I2C1SDA*/
+ // palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+ // palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 }
 
 
@@ -141,7 +140,7 @@ uint8_t stop(uint16_t nb_sec)
   palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
   // prepara despertar por timer
-  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
+  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4    // bits 16-18 = WUCKSel : Select 1 Hz clk
   wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
   rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 

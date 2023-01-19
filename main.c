@@ -22,29 +22,34 @@
 
 
 void initSensores(void);
-void leeAlGPS(void);
+void leeGPS(void);
 extern uint8_t enHora, hayUbicacion;
 
 /*
  * Prueba de alimentador
  *
  * BUCLE
- * - Enciende led placa
- * - Abre tapa (servo=3000)
- * - Espera 3s y apaga el led y el servo
- * - Pone a dormir el STM32 por 30s, o hasta que se pulse KEY en la placa
- * - Enciende el led y el servo
- * - Cierra tapa (servo=6000)
- * - Apaga led y servo
- * - Pone a dormir el STM32 por 30s, o hasta que se pulse KEY en la placa
- * - Si hay interrupcion sensor, activa led rojo (B5) por 2 ms
+ * Si es el primer arranque, pon RTC en hora con GPS
+ * Para cualquier arranque
+ * - lee la hora del RTC
+ * - Ver estado de sensores
+ * - Leer mensajes del GPRS y si procede, enviar alarmas
+ * - Actualizar estado del servo (si es de noche o no)
+ * - Analizar segundos que faltan para cambiar de estado
+ * - Lanzar stop con tiempo restante
  *
  * HARDWARE
  * - Blackpill
- * - Pin B4 (GPIOB_MOSFET) unido con resistencia a gate del MOSFET-P, activo Low
- * - Pin B6 (GPIOB_PWMSERVO) salida PWM al servo
- * - Pin PB8 (GPIOB_I2C1SCL) para LCD, ALT04
- * - Pin PB9 (GPIOB_I2C1SDA) para LCD, ALT04
+ * - Pin A0 Sensor 1
+ * - Pin A1 Sensor 2
+ * - Pin A2 (GPIOB_TX2) TX para GPRS
+ * - Pin A3 (GPIOB_RX2) RX para GPRS
+ * - Pin A9 (GPIOB_TX1) TX para GPS
+ * - Pin A10 (GPIOB_RX1) RX para GPS
+ * - Pin B0 (GPIOB_ONSERVO) low activa tension al servo
+ * - Pin B1 (GPIOB_ONGPS) low activa GPS
+ * - Pin B2 (GPIOB_ONGPRS) low activa GPRS
+ * - Pin B8 (GPIOB_PWMSERVO) salida PWM al servo en TIM4CH2
  * - Pin C13 (GPIOC_LED) es el led de la placa, activo Low
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
  * - Mosfet-P Source a la batería
@@ -52,6 +57,8 @@ extern uint8_t enHora, hayUbicacion;
  * - Pin A8 (GPIOA_GATETRIAC) TIM1CH1 a puerta de triac
  * - Pin A9 (GPIOA_ZC) Sensor paso por cero, activo bajo
  */
+
+// no consigo bajar de 350 uA
 
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
@@ -89,34 +96,43 @@ uint16_t p2us[21] = {9200, 8564, 7951, 7468, 7048, 6666, 6309, 5969, 5640, 5318,
 //  }
 //}
 
+void parpadear(uint8_t numVeces,uint16_t ms)
+{
+    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
+    for (uint8_t i=0;i<numVeces;i++)
+    {
+      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+      chThdSleepMilliseconds(10);
+      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+      chThdSleepMilliseconds(ms);
+    }
+    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_INPUT_ANALOG);
+}
+
 int main(void) {
   halInit();
   chSysInit();
 
+  ports_set_lowpower();
+  stop(30);
+  parpadear(5,200);
   // chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-//  ports_set_lowpower();
-  leeAlGPS(); // leer GPS
+  ports_set_lowpower();
+  initServo();
+  leeGPS(); // leer GPS
   while (!enHora) // espero a que termine
   {
       chThdSleepMilliseconds(200);
   }
-  initServo();
   // vienes de despertar de un standby?
   if ((PWR->CSR) && PWR_CSR_SBF)
   {
-    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
-    for (uint8_t i=0;i<10;i++)
-    {
-      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-      chThdSleepMilliseconds(200);
-      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-      chThdSleepMilliseconds(200);
-    }
-    palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_INPUT_ANALOG);
+      parpadear(2,1000);
   }
   else
   {
-      leeAlGPS(); // lanza proceso para leer GPS
+      parpadear(5,1000);
+      leeGPS(); // lanza proceso para leer GPS
       while (!enHora) // espero a que termine
       {
           chThdSleepMilliseconds(200);
@@ -131,6 +147,7 @@ int main(void) {
       palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
       palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
       stop(8);
+      parpadear(2,500);
       initServo();
 
       palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
@@ -140,6 +157,7 @@ int main(void) {
       palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
       palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
       stop(8);
+      parpadear(3,500);
       initServo();
   }
 }

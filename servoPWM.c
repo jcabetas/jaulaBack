@@ -15,12 +15,12 @@ static PWMConfig pwmcfg = {
   3125000, /* 48 MHz PWM clock frequency */
     62500,   /* PWM period 20 millisecond */
   NULL,  /* No callback */
-  /* Channel 3 enabled */
+  /* Channel 4 enabled */
   {
     {PWM_OUTPUT_DISABLED, NULL},
     {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
     {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+    {PWM_OUTPUT_DISABLED, NULL},
   },
   0,
   0
@@ -32,9 +32,16 @@ void initServo(void)
  *   Salida servo: TIM4CH3 (PB8)
  */
     palSetPadMode(IOPORT2, 8,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
-	//palSetPadMode(IOPORT2, 6, PAL_MODE_ALTERNATE_PUSHPULL);
+    palSetPadMode(IOPORT2, GPIOB_ONSERVO, PAL_MODE_OUTPUT_PUSHPULL);
+    palClearPad(GPIOB, GPIOB_ONSERVO);
 	pwmStart(&PWMD4, &pwmcfg);
-	mueveServoAncho(4529);
+	mueveServoAncho(2980);
+    chThdSleepMilliseconds(2000);
+    mueveServoAncho(6068);
+    chThdSleepMilliseconds(2000);
+    mueveServoAncho(4529);
+    chThdSleepMilliseconds(2000);
+    palSetPad(GPIOB, GPIOB_ONSERVO);
 }
 
 
@@ -43,7 +50,7 @@ void mueveServoAncho(uint16_t ancho)
   // minimo 2980, maximo 6068, medio 4529
   if (ancho<2980) ancho=2980;
   if (ancho>6068) ancho=6068;
-  pwmEnableChannel(&PWMD4, 0, ancho);
+  pwmEnableChannel(&PWMD4, 2, ancho);
 }
 
 void mueveServoPos(uint8_t porcPosicion)
