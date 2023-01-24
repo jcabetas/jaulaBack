@@ -28,6 +28,7 @@ private:
     static struct fechaHora fechaHoraNow;
     static struct tm fechaNow;
     static float latitudRad, longitudRad;
+    static uint16_t diaCalculado;
 public:
     static void ajustaFechasCambHorario(void);
     static void ajustaHorasLuz(void);

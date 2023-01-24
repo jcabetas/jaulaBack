@@ -58,7 +58,7 @@ extern uint8_t enHora, hayUbicacion;
  * - Pin A9 (GPIOA_ZC) Sensor paso por cero, activo bajo
  */
 
-// no consigo bajar de 350 uA
+// Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet). Alimentando en 3.3V, baja a 22 uA
 
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
@@ -66,35 +66,6 @@ extern uint16_t usRetraso;
 uint16_t p2us[21] = {9200, 8564, 7951, 7468, 7048, 6666, 6309, 5969, 5640, 5318, 5000, 4681, 4359, 4030, 3690, 3333, 2951, 2531, 2048, 1435, 100 };
 
 
-///*
-// * This is a periodic thread that does absolutely nothing except flashing
-// * a LED.
-// */
-//static THD_WORKING_AREA(waThread1, 128);
-//static THD_FUNCTION(Thread1, arg) {
-//  (void)arg;
-//  uint16_t msDelay = 200;
-//  chRegSetThreadName("blinker");
-//  while (true) {
-//      if (enHora==1)
-//          msDelay = 4700;
-//      else
-//          msDelay = 500;
-//    palSetPad(GPIOC, GPIOC_LED);
-//    chThdSleepMilliseconds(msDelay);
-//    palClearPad(GPIOC, GPIOC_LED);
-//    chThdSleepMilliseconds(1);
-//    if (hayUbicacion)
-//    {
-//        palSetPad(GPIOC, GPIOC_LED);
-//        chThdSleepMilliseconds(299);
-//        palClearPad(GPIOC, GPIOC_LED);
-//        chThdSleepMilliseconds(1);
-//    }
-//    else
-//        chThdSleepMilliseconds(300);
-//  }
-//}
 
 void parpadear(uint8_t numVeces,uint16_t ms)
 {
@@ -110,13 +81,18 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 }
 
 int main(void) {
+    uint8_t estDes;
+    uint16_t sec2change;
   halInit();
   chSysInit();
 
-  ports_set_lowpower();
-  stop(30);
+  palSetPad(GPIOC, GPIOC_LED);
+  //ports_set_lowpower();
+//  palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_INPUT_ANALOG);
+//  palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_INPUT_ANALOG);
+//  palSetPadMode(GPIOB, GPIOB_ONGPRS, PAL_MODE_INPUT_ANALOG);
+  //stop(15);
   parpadear(5,200);
-  // chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
   ports_set_lowpower();
   initServo();
   leeGPS(); // leer GPS
@@ -125,39 +101,38 @@ int main(void) {
       chThdSleepMilliseconds(200);
   }
   // vienes de despertar de un standby?
-  if ((PWR->CSR) && PWR_CSR_SBF)
-  {
-      parpadear(2,1000);
-  }
-  else
-  {
-      parpadear(5,1000);
-      leeGPS(); // lanza proceso para leer GPS
-      while (!enHora) // espero a que termine
-      {
-          chThdSleepMilliseconds(200);
-      }
-  }
+//  if ((PWR->CSR) && PWR_CSR_SBF)
+//  {
+//      parpadear(3,1000);
+//  }
+//  else
+//  {
+//      parpadear(4,1000);
+//      leeGPS(); // lanza proceso para leer GPS
+//      while (!enHora) // espero a que termine
+//      {
+//          chThdSleepMilliseconds(200);
+//      }
+//  }
   while (1)
   {
-      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+//      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
+//      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
+//      mueveServoAncho(3000);            // abre tapa
+//      chThdSleepMilliseconds(2000);
+//      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
+//      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
+      parpadear(2,250);
+      estadoDeseadoPuerta(&estDes, &sec2change);
       palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
-      mueveServoAncho(3000);            // abre tapa
+      if (estDes==0)
+          mueveServoPos(0);
+      else
+          mueveServoPos(100);
+      // dale tiempo para posicionarse
       chThdSleepMilliseconds(2000);
-      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
       palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
-      stop(8);
-      parpadear(2,500);
-      initServo();
-
-      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
-      mueveServoAncho(5000);            // cierra tapa
-      chThdSleepMilliseconds(2000);
-      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
-      stop(8);
-      parpadear(3,500);
-      initServo();
+      estadoDeseadoPuerta(&estDes, &sec2change);
+      stop(sec2change);
   }
 }

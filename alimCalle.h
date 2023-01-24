@@ -17,6 +17,7 @@ uint8_t standby0(uint16_t nb_sec);
 void ports_set_lowpower(void);
 void ports_set_normal(void);
 void initW25q16(void);
-
+void leeHora(struct tm *tmAhora);
+void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change);
 
 #endif /* ALIMCALLE_H_ */

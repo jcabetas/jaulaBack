@@ -21,6 +21,7 @@ extern event_source_t sendMsgCAN_source;
 
 uint16_t calendar::minAmanecer = 370;
 uint16_t calendar::minAnochecer = 1194;
+uint16_t calendar::diaCalculado = 9999;
 float calendar::longitudRad = -0.0646295422; //  -3.703
 float calendar::latitudRad = 0.7054044878;   //  40.4167
 time_t calendar::fechaCambioVer2Inv = 0;
@@ -28,6 +29,11 @@ time_t calendar::fechaCambioInv2Ver = 0;
 struct fechaHora calendar::fechaHoraNow = {0,0};
 struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 
+extern "C"
+{
+    void leeHora(struct tm *tmAhora);
+    void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change);
+}
 
 
 // segundos Unix en UTC
@@ -206,6 +212,8 @@ void calendar::ajustaHorasLuz(void)
     float diaAno, fraccAno;
     float decl, ha;
 
+    if (diaCalculado == fechaNow.tm_yday)
+        return; // ya estaba calculado
     diaAno = (float) (fechaNow.tm_yday);
     fraccAno = 2.0*M_PI/365.0*(diaAno-0.5f);
 //    eqTime = +229.18f*(0.000075f+0.001868f*cos(fraccAno)-0.032077f*sin(fraccAno)-0.014615f*cos(2.0f*fraccAno)-0.040849f*sin(2.0f*fraccAno));
@@ -213,6 +221,7 @@ void calendar::ajustaHorasLuz(void)
     ha = -acosf(cosf(93.0f*M_PI/180.0f)/cosf(latitudRad)/cosf(decl)-tanf(latitudRad)*tan(decl));
     minAmanecer = 60.0f*(12.0f+ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
     minAnochecer = 60.0*(12.0f-ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
+    diaCalculado = fechaNow.tm_yday;
 }
 
 // debe ser llamado al inicio, en cambio de fecha, o cuando cambia el año
@@ -316,7 +325,7 @@ void calendar::init(void)
     memcpy(&fechaNow, &tim, sizeof(fechaNow));
     fechaHoraNow.secsUnix = getSecUnix(&tim);
     fechaHoraNow.dsUnix = ds;
-    ajustaFechasCambHorario();
+    //ajustaFechasCambHorario(); no se usa, hay que ponerlo cuando se lee la hora si se quiere hora local
     ajustaHorasLuz();
 }
 
@@ -347,5 +356,22 @@ void calendar::updateEveryDs(void)
 }
 
 
+void leeHora(struct tm *tmAhora)
+{
+    calendar::init();
+    calendar::getFecha(tmAhora);
+}
 
+
+
+void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
+{
+    struct tm tim;
+    calendar::init();
+    calendar::getFecha(&tim);
+    *estDes = 0;
+    if (tim.tm_min%2 == 1)
+        *estDes = 1;
+    *sec2change = 60 - tim.tm_sec;
+}
 

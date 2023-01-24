@@ -37,10 +37,6 @@ void initServo(void)
 	pwmStart(&PWMD4, &pwmcfg);
 	mueveServoAncho(2980);
     chThdSleepMilliseconds(2000);
-    mueveServoAncho(6068);
-    chThdSleepMilliseconds(2000);
-    mueveServoAncho(4529);
-    chThdSleepMilliseconds(2000);
     palSetPad(GPIOB, GPIOB_ONSERVO);
 }
 
@@ -50,6 +46,8 @@ void mueveServoAncho(uint16_t ancho)
   // minimo 2980, maximo 6068, medio 4529
   if (ancho<2980) ancho=2980;
   if (ancho>6068) ancho=6068;
+  if (PWMD4.state==PWM_STOP)
+      pwmStart(&PWMD4, &pwmcfg);
   pwmEnableChannel(&PWMD4, 2, ancho);
 }
 
@@ -57,6 +55,6 @@ void mueveServoPos(uint8_t porcPosicion)
 {
   uint16_t ancho;
   if (porcPosicion>100) porcPosicion=100;
-  ancho = (uint16_t) (4529.0f+3088.0f*porcPosicion/100.0f);
+  ancho = (uint16_t) (2980.0f+3088.0f*porcPosicion/100.0f);
   mueveServoAncho(ancho);
 }

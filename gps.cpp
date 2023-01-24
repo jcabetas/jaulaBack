@@ -109,12 +109,13 @@ void leeGPS(void)
     event_listener_t receivedData;
     char *parametros[30];
 
+    palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
+    palClearPad(GPIOB, GPIOB_ONGPS);
     palClearPad(GPIOA, GPIOA_TX1);
     palSetPad(GPIOA, GPIOA_RX1);
     palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_ALTERNATE(7));
     palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
     sdStart(&SD1, &ser_cfg);
-    palClearPad(GPIOB, GPIOB_ONGPS);
 
     uint16_t dsEsperandoUbicacion = 0;
 
