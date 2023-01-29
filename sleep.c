@@ -63,52 +63,52 @@ void ports_set_lowpower(void)
  *         Must be called only from main()  To be tested (seen some comments on forums)
  * \param[in]  (u16) nb_of sec to wait in sleep mode: 1-65535
  * \return     (u8)  wake source:  WAKE_SOURCE_TIMER, WAKE_SOURCE_EXTERNAL, WAKE_SOURCE_LPUART
-*/
+ */
 // funciona con consumo de 1.9mA (no cambia al quitar ADC ni puesrto serie)
 
 uint8_t sleep_for_x_sec(uint16_t nb_sec)
 {
-  static RTCWakeup wakeupspec;
-  static uint8_t wakeup_source;
+    static RTCWakeup wakeupspec;
+    static uint8_t wakeup_source;
 
-  GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
+    GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
 
-  // prepara interrupcion por boton KEY
-  GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
-  palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
-  palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
+    // prepara interrupcion por boton KEY
+    GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
+    palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
+    palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
-  // prepara despertar por timer
-  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
-  wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
-  rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
+    // prepara despertar por timer
+    wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
+    wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-  //ports_set_lowpower();                                 // Set ports for low power
-//  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
-//  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
+    //ports_set_lowpower();                                 // Set ports for low power
+    //  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
+    //  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
 
-  chSysDisable();                               // No effect
-  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
-  chSysEnable();                                // No effect
+    chSysDisable();                               // No effect
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
+    chSysEnable();                                // No effect
 
-  chSysDisable();
-  __disable_irq();
-  chSysEnable();
+    chSysDisable();
+    __disable_irq();
+    chSysEnable();
 
-  // adormir
-  __WFI();
+    // adormir
+    __WFI();
 
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
+    palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+    palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
+    PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
 
-  __enable_irq();                               // No effect
+    __enable_irq();                               // No effect
 
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
-  palDisableLineEvent(LINE_A0_KEY);
+    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+    palDisableLineEvent(LINE_A0_KEY);
 
-  return wakeup_source;
+    return wakeup_source;
 }
 
 
@@ -119,141 +119,137 @@ uint8_t sleep_for_x_sec(uint16_t nb_sec)
  *         Must be called only from main()  To be tested (seen some comments on forums)
  * \param[in]  (u16) nb_of sec to wait in sleep mode: 1-65535
  * \return     (u8)  wake source:  WAKE_SOURCE_TIMER, WAKE_SOURCE_EXTERNAL, WAKE_SOURCE_LPUART
-*/
+ */
 // consumo 26uA, necesito hacer halInit() para que funcione PWM y sleep al volver
 uint8_t stop(uint16_t nb_sec)
 {
-  static RTCWakeup wakeupspec;
-  static uint8_t wakeup_source;
+    static RTCWakeup wakeupspec;
+    static uint8_t wakeup_source;
 
-  if (nb_sec==0)
-      nb_sec = 1;
-  GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
+    if (nb_sec==0)
+        nb_sec = 1;
+    GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
 
-  // prepara interrupcion por boton KEY
-  GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
-  palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
-  palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
+    // prepara interrupcion por boton KEY
+    GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
+    palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
+    palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
-  // prepara despertar por timer
-  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
-  wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
-  rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
+    // prepara despertar por timer
+    wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
+    wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-  //ports_set_lowpower();                                 // Set ports for low power
-//  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
-//  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
+    chSysDisable();                               // No effect
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
+    chSysEnable();                                // No effect
 
-  chSysDisable();                               // No effect
-  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
-  chSysEnable();                                // No effect
+    chSysDisable();
+    __disable_irq();
+    chSysEnable();
 
-  chSysDisable();
-  __disable_irq();
-  chSysEnable();
+    DBGMCU->CR = 0;
 
-  DBGMCU->CR = 0;
+    // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
+    /* clear PDDS and LPDS bits */
+    PWR->CR &= ~(PWR_CR_PDDS | PWR_CR_LPDS);
+    /* set LPDS and clear  */
+    PWR->CR |= (PWR_CR_LPDS | PWR_CR_CSBF | PWR_CR_CWUF);
+    PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
 
-  // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
-  /* clear PDDS and LPDS bits */
-  PWR->CR &= ~(PWR_CR_PDDS | PWR_CR_LPDS);
-  /* set LPDS and clear  */
-  PWR->CR |= (PWR_CR_LPDS | PWR_CR_CSBF | PWR_CR_CWUF);
-  PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
+    /* Setup the deepsleep mask */
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
-  /* Setup the deepsleep mask */
-  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    __WFI();
 
-  __WFI();
+    __enable_irq();
 
-  __enable_irq();
+    palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+    palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
 
-  SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
+    PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
 
-  PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
+    stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
+    halInit();
 
-  stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
-  halInit();
+    __enable_irq();                               // No effect
 
-  __enable_irq();                               // No effect
+    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
+    palDisableLineEvent(LINE_A0_KEY);
 
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
-  palDisableLineEvent(LINE_A0_KEY);
-
-  //ports_set_normal();
-  return wakeup_source;
+    //ports_set_normal();
+    return wakeup_source;
 }
 
 
 uint8_t standby0(uint16_t nb_sec)
 {
-  static RTCWakeup wakeupspec;
-  static uint8_t wakeup_source;
+    static RTCWakeup wakeupspec;
+    static uint8_t wakeup_source;
 
-  GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
+    GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
 
-  // prepara interrupcion por boton KEY
-  GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
-  palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
-  palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
+    // prepara interrupcion por boton KEY
+    GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
+    palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
+    palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
-  // prepara despertar por timer
-  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
-  wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
-  rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
+    // prepara despertar por timer
+    wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
+    wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-  chSysDisable();                               // No effect
-  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
-  chSysEnable();                                // No effect
+    chSysDisable();                               // No effect
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
+    chSysEnable();                                // No effect
 
-  chSysDisable();
-  __disable_irq();
-  chSysEnable();
+    chSysDisable();
+    __disable_irq();
+    chSysEnable();
 
-  // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
-  // set PDDS
-
-
+    // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
+    // set PDDS
 
 
 
-  DBGMCU->CR = 0;
-  // lo que dicen en https://www.youtube.com/watch?v=O82rj9qxkgs
-  RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  /* Setup the deepsleep mask */
-  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-  // select standby mode
-  PWR->CR |= PWR_CR_PDDS;
-  // Enable wakeup pin
-  PWR->CSR |= PWR_CSR_EWUP;
-  // clear CWUF
-  PWR->CR |= PWR_CR_CWUF;
-  (void)PWR->CR; // para esperar a que el valor se ponga, hay que leer cualquier registro (al menos en STM32L4)
 
-  __WFI();
 
-  __enable_irq();
+    DBGMCU->CR = 0;
+    // lo que dicen en https://www.youtube.com/watch?v=O82rj9qxkgs
+    RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+    /* Setup the deepsleep mask */
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    // select standby mode
+    PWR->CR |= PWR_CR_PDDS;
+    // Enable wakeup pin
+    PWR->CSR |= PWR_CSR_EWUP;
+    // clear CWUF
+    PWR->CR |= PWR_CR_CWUF;
+    (void)PWR->CR; // para esperar a que el valor se ponga, hay que leer cualquier registro (al menos en STM32L4)
 
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
+    __WFI();
 
-  SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
+    __enable_irq();
 
-  PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
+    palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+    palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
-  halInit();
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
 
-  __enable_irq();                               // No effect
+    PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
 
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
-  palDisableLineEvent(LINE_A0_KEY);
+    stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
+    halInit();
 
-  //ports_set_normal();
-  return wakeup_source;
+    __enable_irq();                               // No effect
+
+    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
+    palDisableLineEvent(LINE_A0_KEY);
+
+    //ports_set_normal();
+    return wakeup_source;
 }
 
 
@@ -265,114 +261,114 @@ uint8_t standby0(uint16_t nb_sec)
  *         Must be called only from main()  To be tested (seen some comments on forums)
  * \param[in]  (u16) nb_of sec to wait in sleep mode: 1-65535
  * \return     (u8)  wake source:  WAKE_SOURCE_TIMER, WAKE_SOURCE_EXTERNAL, WAKE_SOURCE_LPUART
-*/
+ */
 void standby(uint16_t nb_sec)
 {
-  static RTCWakeup wakeupspec;
+    static RTCWakeup wakeupspec;
 
-  GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
+    GL_Sleep_Requested = 0;                               // Reset Flag Sleep_Requested
 
-  // prepara interrupcion por boton KEY
-  GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
-  palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
-  palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
+    // prepara interrupcion por boton KEY
+    GL_Flag_External_WakeUp = 0;                          // Reset flag that will be set by the CB
+    palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
+    palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
-  //
-  wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
-  wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
-  rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
+    //
+    wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
+    wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-  //ports_set_lowpower();                                 // Set ports for low power
-//  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
-//  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
+    //ports_set_lowpower();                                 // Set ports for low power
+    //  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
+    //  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
 
-//  DBGMCU->CR = DBGMCU_CR_DBG_STOP;                      // Allow debug in Stop mode: +130uA !!!
+    //  DBGMCU->CR = DBGMCU_CR_DBG_STOP;                      // Allow debug in Stop mode: +130uA !!!
 
-//  chSysLock();                                // Wakeup in strange mode: 200uA, freezed
+    //  chSysLock();                                // Wakeup in strange mode: 200uA, freezed
 
-//  chSysDisable();                               // No effect
-//  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
-//  chSysEnable();                                // No effect
-//
-//  chSysDisable();
-//  __disable_irq();
-//  chSysEnable();
+    //  chSysDisable();                               // No effect
+    //  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
+    //  chSysEnable();                                // No effect
+    //
+    //  chSysDisable();
+    //  __disable_irq();
+    //  chSysEnable();
 
-  /* Setup the deepsleep mask */
-  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+    /* Setup the deepsleep mask */
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
-  // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
-  /* clear PDDS and LPDS bits */
-  // set PDDS
-  PWR->CR |= PWR_CR_PDDS;
-  // clear CWUF
-  PWR->CR &= ~PWR_CR_CWUF;
- //           PWR->CR &= ~(PWR_CR_PDDS | PWR_CR_LPDS);
+    // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
+    /* clear PDDS and LPDS bits */
+    // set PDDS
+    PWR->CR |= PWR_CR_PDDS;
+    // clear CWUF
+    PWR->CR &= ~PWR_CR_CWUF;
+    //           PWR->CR &= ~(PWR_CR_PDDS | PWR_CR_LPDS);
 
-            /* set LPDS and clear  */
- //           PWR->CR |= (PWR_CR_LPDS | PWR_CR_CSBF | PWR_CR_CWUF);
-
-
-
-            chSysDisable();                               // No effect
-            SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
-            chSysEnable();                                // No effect
-            chSysDisable();
-            __disable_irq();
-            chSysEnable();
-
-            __SEV();
-            __WFI();
-            __enable_irq();
-
-            /* clear the deepsleep mask */
-            SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+    /* set LPDS and clear  */
+    //           PWR->CR |= (PWR_CR_LPDS | PWR_CR_CSBF | PWR_CR_CWUF);
 
 
 
+    chSysDisable();                               // No effect
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
+    chSysEnable();                                // No effect
+    chSysDisable();
+    __disable_irq();
+    chSysEnable();
 
-//  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;                    // al activar, luego no funciona PWM... Low power mode in deep sleep
-//  PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
+    __SEV();
+    __WFI();
+    __enable_irq();
 
-// -----------------------------------------------------
-                                                        //
-//  __WFI();                                              // Sleep now !!!
-                                                        //
-// -----------------------------------------------------
+    /* clear the deepsleep mask */
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 
-  //LPUART1->CR1 &= ~USART_CR1_UESM;                      // LPUART not able to wakeup from Stop
 
-//  if (GL_Flag_External_WakeUp)                          // Search for the wake-up sources
-//  {
-//    wakeup_source = WAKE_SOURCE_EXTERNAL;               // External signal indicated by callback
-//  }
-//  else if ( !(LPUART1->ISR & USART_ISR_IDLE) )
-//  {
-//    wakeup_source = WAKE_SOURCE_LPUART;                 // LPUART
-//  }
-//  else                                                  // Else
-//  {
-//    wakeup_source = WAKE_SOURCE_TIMER;                  // Its the internal timer
-//  }
 
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
+    //  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;                    // al activar, luego no funciona PWM... Low power mode in deep sleep
+    //  PWR->CR |= PWR_CR_LPLVDS;                             // Deep sleep mode in Stop2
 
-  PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
-  //LPUART1->ICR |= USART_ICR_PECF;                       // Clear Parity error
+    // -----------------------------------------------------
+    //
+    //  __WFI();                                              // Sleep now !!!
+    //
+    // -----------------------------------------------------
 
-//  chSysUnlock();
-//  chSysDisable();                             // No effect
+    //LPUART1->CR1 &= ~USART_CR1_UESM;                      // LPUART not able to wakeup from Stop
 
-  stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
-  __enable_irq();                               // No effect
+    //  if (GL_Flag_External_WakeUp)                          // Search for the wake-up sources
+    //  {
+    //    wakeup_source = WAKE_SOURCE_EXTERNAL;               // External signal indicated by callback
+    //  }
+    //  else if ( !(LPUART1->ISR & USART_ISR_IDLE) )
+    //  {
+    //    wakeup_source = WAKE_SOURCE_LPUART;                 // LPUART
+    //  }
+    //  else                                                  // Else
+    //  {
+    //    wakeup_source = WAKE_SOURCE_TIMER;                  // Its the internal timer
+    //  }
 
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
-  palDisableLineEvent(LINE_A0_KEY);
+    palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+    palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 
-  //ports_set_normal();
-  return ;
+    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;                   // Clear deep sleep mask
+
+    PWR->CSR |= PWR_CSR_SBF;                             // Clear standby flag
+    //LPUART1->ICR |= USART_ICR_PECF;                       // Clear Parity error
+
+    //  chSysUnlock();
+    //  chSysDisable();                             // No effect
+
+    stm32_clock_init();                           // Si lo pongo, en sleep se queda pillado        // Re-init RCC and power, Important
+    __enable_irq();                               // No effect
+
+    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
+    palDisableLineEvent(LINE_A0_KEY);
+
+    //ports_set_normal();
+    return ;
 }
 
