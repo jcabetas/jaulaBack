@@ -26,7 +26,7 @@ void leeGPS(void);
 extern uint8_t enHora, hayUbicacion;
 
 /*
- * Prueba de alimentador
+ * Alimentador de gatos
  *
  * BUCLE
  * Si es el primer arranque, pon RTC en hora con GPS
@@ -52,19 +52,12 @@ extern uint8_t enHora, hayUbicacion;
  * - Pin B8 (GPIOB_PWMSERVO) salida PWM al servo en TIM4CH2
  * - Pin C13 (GPIOC_LED) es el led de la placa, activo Low
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
- * - Mosfet-P Source a la batería
- * - Mosfet-P drenador al + del servo
- * - Pin A8 (GPIOA_GATETRIAC) TIM1CH1 a puerta de triac
- * - Pin A9 (GPIOA_ZC) Sensor paso por cero, activo bajo
  */
 
 // Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet). Alimentando en 3.3V, baja a 22 uA
 
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
-extern uint16_t usRetraso;
-uint16_t p2us[21] = {9200, 8564, 7951, 7468, 7048, 6666, 6309, 5969, 5640, 5318, 5000, 4681, 4359, 4030, 3690, 3333, 2951, 2531, 2048, 1435, 100 };
-
 
 
 void parpadear(uint8_t numVeces,uint16_t ms)
@@ -87,11 +80,6 @@ int main(void) {
   chSysInit();
 
   palSetPad(GPIOC, GPIOC_LED);
-  //ports_set_lowpower();
-//  palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_INPUT_ANALOG);
-//  palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_INPUT_ANALOG);
-//  palSetPadMode(GPIOB, GPIOB_ONGPRS, PAL_MODE_INPUT_ANALOG);
-  //stop(15);
   parpadear(5,200);
   ports_set_lowpower();
   initServo();
