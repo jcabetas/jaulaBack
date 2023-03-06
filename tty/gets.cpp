@@ -10,6 +10,7 @@
 #include "hal.h"
 #include "tty.h"
 #include "string.h"
+#include <stdlib.h>
 #include "chprintf.h"
 
 
@@ -290,11 +291,10 @@ void int2str(uint8_t valor, char *string)
     string[8] = 0;
 }
 
-int16_t preguntaNumero(BaseChannel *ttyBC, char *msg, uint32_t *numeroPtr, uint32_t valorMin, uint32_t valorMax)
+int16_t preguntaNumero(BaseChannel *ttyBC, const char *msg, int16_t *numeroPtr, int16_t valorMin, int16_t valorMax)
 {
     uint8_t buffer[50];
-    int16_t error;
-    uint32_t resultado;
+    int32_t resultado;
     BaseSequentialStream *tty = (BaseSequentialStream *)ttyBC;
     chprintf((BaseSequentialStream *)tty,msg);
     chprintf((BaseSequentialStream *)tty," [%d...%d]:", valorMin, valorMax);
@@ -304,12 +304,7 @@ int16_t preguntaNumero(BaseChannel *ttyBC, char *msg, uint32_t *numeroPtr, uint3
     {
         return 1;
     }
-    error = Str2Int(buffer, &resultado);
-    if (error)
-    {
-        chprintf((BaseSequentialStream *)tty,"Numero invalido!!\n\r");
-        return 2;
-    }
+    resultado = atoi((char *)buffer);
     if (resultado>valorMax)
     {
         chprintf((BaseSequentialStream *)tty,"Demasiado alto!!\n\r");
@@ -323,7 +318,6 @@ int16_t preguntaNumero(BaseChannel *ttyBC, char *msg, uint32_t *numeroPtr, uint3
     *numeroPtr = resultado;
     return 0;
 }
-
 
 void parseStr(char *cadena,char **parametros, const char *tokens,uint16_t *numParam)
 {

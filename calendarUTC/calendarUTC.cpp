@@ -310,6 +310,15 @@ void calendar::printHoras(char *buff, uint16_t longBuff)
     chsnprintf(buff,longBuff,"%d:%02d-%d:%02d",hAma,minAma,hNoche,minNoche);
 }
 
+void calendar::printFecha(char *buff, uint16_t longBuff)
+{
+    struct tm tim;
+    calendar::init();
+    calendar::getFecha(&tim);
+    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",tim.tm_mday,tim.tm_mon+1,tim.tm_year-100,tim.tm_hour,tim.tm_min,tim.tm_sec);
+}
+
+
 void calendar::setLatLong(float latitudRadNoche, float longitudRadNoche)
 {
     latitudRad = latitudRadNoche;

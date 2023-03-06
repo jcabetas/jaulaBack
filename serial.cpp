@@ -10,84 +10,80 @@
 using namespace chibios_rt;
 
 #include "tty.h"
+#include "gets.h"
 #include "string.h"
 #include <stdlib.h>
 #include "chprintf.h"
+#include "calendarUTC.h"
 
 extern "C" {
-void initSerial(void);
+    void initSerial(void);
+    void opciones(void);
 }
 void ajustaP(uint16_t porcP);
+uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t sec);
 
 extern uint16_t pObjetivo;
 extern uint16_t hayTension;
 
 static const SerialConfig ser_cfg = {115200, 0, 0, 0, };
 
-thread_t *comProcess;
-
-/*
- * Escucha para eventos de cambio de potencia (p.e. P=30). Devuelve el valor para confirmar recepcion
- * Envia estado de deteccion de impulsos (Z=1) cada segundo
- */
-
-static THD_WORKING_AREA(wathreadCom, 3500);
-
-static THD_FUNCTION(threadCom, arg) {
-    (void)arg;
-    eventmask_t evt;
-    eventflags_t flags;
-    uint8_t huboTimeout;
-    uint16_t ms;
-    event_listener_t receivedData;
-    char buffer[20];
-    chRegSetThreadName("nextionCom");
-
-    ms = 0;
-    chEvtRegisterMaskWithFlags (chnGetEventSource(&SD1),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
-    while (true)
-    {
-        evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100));
-        if (chThdShouldTerminateX())
-        {
-            chEvtUnregister(chnGetEventSource(&SD1), &receivedData);
-            chThdExit((msg_t) 1);
-        }
-        if (evt & EVENT_MASK(1)) // Algo ha entrado desde SD1
-        {
-            flags = chEvtGetAndClearFlags(&receivedData);
-            if (flags & CHN_INPUT_AVAILABLE)
-            {
-                chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer, sizeof(buffer), TIME_MS2I(100),&huboTimeout);
-                if (huboTimeout)
-                    continue;
-                if (buffer[0]=='P' && buffer[1]==':' && strlen(buffer)<=6)
-                {
-                    uint16_t Penviado = atoi(&buffer[2]);
-                    if (Penviado<=100)
-                    {
-                        ajustaP(Penviado);
-                        chprintf((BaseSequentialStream *)&SD1,"P:%d\n\r",pObjetivo);
-                    }
-                }
-            }
-        }
-        ms += 100;
-        if (ms>=2000)
-        {
-            ms =0;
-            chprintf((BaseSequentialStream *)&SD1,"V:%d\n",hayTension);
-        }
-    }
+void initSerial(void) {
+    palClearPad(GPIOA, GPIOA_TX2);
+    palSetPad(GPIOA, GPIOA_RX2);
+    palSetPadMode(GPIOA, GPIOA_TX2, PAL_MODE_ALTERNATE(7));
+    palSetPadMode(GPIOA, GPIOA_TX2, PAL_MODE_ALTERNATE(7));
+    sdStart(&SD2, &ser_cfg);
 }
 
-void initSerial(void) {
-    palClearPad(GPIOA, GPIOA_TX1);
-    palSetPad(GPIOA, GPIOA_RX1);
-    palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_ALTERNATE(7));
-    palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_ALTERNATE(7));
-    sdStart(&SD1, &ser_cfg);
-    if (!comProcess)
-        comProcess = chThdCreateStatic(wathreadCom, sizeof(wathreadCom),
-                                       NORMALPRIO, threadCom, NULL);
+
+
+void ajustaHora(void)
+{
+    int16_t ano;
+    int16_t mes, dia, hora, min, sec;
+    char buff[50];
+    struct tm tim;
+    calendar::init();
+    calendar::getFecha(&tim);
+    ano = tim.tm_year+100;
+    mes = tim.tm_mon+1;
+    dia = tim.tm_mday;
+    hora = tim.tm_hour;
+    min = tim.tm_min;
+    sec = tim.tm_sec;
+    preguntaNumero((BaseChannel *)&SD2, "Anyo", &ano, 2023, 2060);
+    preguntaNumero((BaseChannel *)&SD2, "Mes", &mes, 1, 12);
+    preguntaNumero((BaseChannel *)&SD2, "Dia", &dia, 1, 31);
+    preguntaNumero((BaseChannel *)&SD2, "Hora", &hora, 0, 23);
+    preguntaNumero((BaseChannel *)&SD2, "Minutos", &min, 0, 59);
+    preguntaNumero((BaseChannel *)&SD2, "Segundos", &sec, 0, 59);
+    ajustaHoraDetallada(ano, mes, dia, hora, min, sec);
+    calendar::printFecha(buff,sizeof(buff));
+    chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
+}
+
+
+void opciones(void)
+{
+    int16_t result;
+    int16_t opcion;
+    char buff[50];
+    initSerial();
+    calendar::printFecha(buff,sizeof(buff));
+    chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
+    while (1==1)
+    {
+        chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"3 Desfases\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
+        chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        if (result==0 && opcion==1)
+            ajustaHora();
+        if (result==0)
+            break;
+    }
+    chprintf((BaseSequentialStream *)&SD2,"Opcion elegida: %d\n\r",opcion);
+    chprintf((BaseSequentialStream *)&SD2,"\n\r");
 }

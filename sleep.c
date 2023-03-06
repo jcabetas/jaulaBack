@@ -36,7 +36,7 @@ void ports_set_lowpower(void)
   /* Set all I/O pins to Analog inputs */
   for(uint8_t i = 0; i < 16; i++ )
    {
-       if (i!=LINE_A0_KEY && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK && i!=GPIOA_W25Q16_CS)
+       if (i!=LINE_A0_KEY && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK && i!=GPIOA_W25Q16_CS && i!=GPIOA_TX2 && i!=GPIOA_RX2)
          palSetPadMode( GPIOA, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOB, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
@@ -209,13 +209,6 @@ uint8_t standby0(uint16_t nb_sec)
     __disable_irq();
     chSysEnable();
 
-    // lo que pone en http://forum.chibios.org/viewtopic.php?t=2315
-    // set PDDS
-
-
-
-
-
     DBGMCU->CR = 0;
     // lo que dicen en https://www.youtube.com/watch?v=O82rj9qxkgs
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
@@ -261,6 +254,10 @@ uint8_t standby0(uint16_t nb_sec)
  *         Must be called only from main()  To be tested (seen some comments on forums)
  * \param[in]  (u16) nb_of sec to wait in sleep mode: 1-65535
  * \return     (u8)  wake source:  WAKE_SOURCE_TIMER, WAKE_SOURCE_EXTERNAL, WAKE_SOURCE_LPUART
+ *
+ * // vienes de despertar de un standby?
+ * //  if ((PWR->CSR) && PWR_CSR_SBF)
+ *
  */
 void standby(uint16_t nb_sec)
 {

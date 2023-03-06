@@ -18,12 +18,17 @@
 #include "hal.h"
 #include "varsFlash.h"
 #include "alimCalle.h"
-#include "lcd.h"
+#include "gets.h"
+#include "tty.h"
 
 
 void initSensores(void);
+void initSerial(void);
 void leeGPS(void);
+int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
+void opciones(void);
 extern uint8_t enHora, hayUbicacion;
+extern uint8_t GL_Flag_External_WakeUp;
 
 /*
  * Alimentador de gatos
@@ -32,7 +37,7 @@ extern uint8_t enHora, hayUbicacion;
  * Si es el primer arranque, pon RTC en hora con GPS
  * Para cualquier arranque
  * - lee la hora del RTC
- * - Ver estado de sensores
+ * - Ver estado de sensoresinitSerial
  * - Leer mensajes del GPRS y si procede, enviar alarmas
  * - Actualizar estado del servo (si es de noche o no)
  * - Analizar segundos que faltan para cambiar de estado
@@ -50,7 +55,7 @@ extern uint8_t enHora, hayUbicacion;
  * - Pin B1 (GPIOB_ONGPS) low activa GPS
  * - Pin B2 (GPIOB_ONGPRS) low activa GPRS
  * - Pin B8 (GPIOB_PWMSERVO) salida PWM al servo en TIM4CH2
- * - Pin C13 (GPIOC_LED) es el led de la placa, activo Low
+ * - Pin C13 (GPIOC_LED) es el led de la placa, activo Lowvoid opciones(void)
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
  */
 
@@ -76,12 +81,50 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 int main(void) {
     uint8_t estDes;
     uint16_t sec2change;
+
   halInit();
   chSysInit();
+
+  initSerial();
+  chprintf((BaseSequentialStream *)&SD2,"Inicializado\n\r");
+  chThdSleepMilliseconds(500);
+  while (1==1)
+  {
+      chprintf((BaseSequentialStream *)&SD2,"A dormir\n\r");
+      stop(15);
+      if (GL_Flag_External_WakeUp==0)
+      {
+          initSerial();
+          chprintf((BaseSequentialStream *)&SD2,"Timeout desde stop\n\r");
+      }
+      else
+          opciones();
+//      {
+//          initSerial();
+//          while (1==1)
+//          {
+//              chprintf((BaseSequentialStream *)&SD2,"Deteccion:%d\n\r",GL_Flag_External_WakeUp);
+//              chprintf((BaseSequentialStream *)&SD2,"1 Hora y fecha\n\r");
+//              chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
+//              chprintf((BaseSequentialStream *)&SD2,"3 Desfases\n\r");
+//              result = preguntaNumeroC((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
+//              chprintf((BaseSequentialStream *)&SD2,"\n\r");
+//              if (result==0)
+//                  break;
+//          }
+//          chprintf((BaseSequentialStream *)&SD2,"Opcion elegida: %d\n\r",opcion);
+//          chprintf((BaseSequentialStream *)&SD2,"\n\r");
+//      }
+      parpadear(2,250);
+  }
 
   palSetPad(GPIOC, GPIOC_LED);
   parpadear(5,200);
   ports_set_lowpower();
+
+
+
+
   initServo();
   leeGPS(); // leer GPS
   while (!enHora) // espero a que termine

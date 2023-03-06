@@ -79,6 +79,26 @@ uint8_t ajustaHora(char *horaStr,char *fechaStr)
 }
 
 
+uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t sec)
+{
+    struct tm fecha;
+    fecha.tm_year = ano - 1900;
+    fecha.tm_mon = mes-1;
+    fecha.tm_mday = dia;
+    fecha.tm_sec = sec;
+    fecha.tm_min = min;
+    fecha.tm_hour = hora;
+    fecha.tm_isdst = 0;
+    uint16_t ds = 0;
+    //void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano)
+    completeYdayWday(&fecha);
+    rtcSetTM(&RTCD1, &fecha, ds);
+    // horaStr = "082126.00"
+    // fechaStr = "061022"
+    // => 08:21:26 Z  06/10/22
+    return 1;
+}
+
 // latStr  = "4026.73829", N
 // longStr = "00359.88675", W
 void setPos(char *latStr, char *NS, char *longStr, char *EW)
