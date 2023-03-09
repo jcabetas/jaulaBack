@@ -36,6 +36,10 @@
 /*
  * HAL driver system settings.
  */
+// para STM32F411 cambiar
+// #define STM32_PLLN_VALUE                    192
+// para STM32F401 cambiar
+// #define STM32_PLLN_VALUE                    168
 
 #define STM32_NO_INIT                       FALSE
 #define STM32_HSI_ENABLED                   TRUE
@@ -46,7 +50,7 @@
 #define STM32_SW                            STM32_SW_HSE
 #define STM32_PLLSRC                        STM32_PLLSRC_HSE
 #define STM32_PLLM_VALUE                    25
-#define STM32_PLLN_VALUE                    192
+#define STM32_PLLN_VALUE                    168
 #define STM32_PLLP_VALUE                    2
 #define STM32_PLLQ_VALUE                    4
 #define STM32_HPRE                          STM32_HPRE_DIV1
@@ -66,36 +70,6 @@
 #define STM32_BKPRAM_ENABLE                 FALSE
 
 /*
-#define STM32_NO_INIT                       FALSE
-#define STM32_HSI_ENABLED                   TRUE
-#define STM32_LSI_ENABLED                   FALSE
-#define STM32_HSE_ENABLED                   TRUE
-#define STM32_LSE_ENABLED                   TRUE
-#define STM32_CLOCK48_REQUIRED              FALSE
-#define STM32_SW                            STM32_SW_PLL
-#define STM32_PLLSRC                        STM32_PLLSRC_HSE
-#define STM32_PLLM_VALUE                    25
-#define STM32_PLLN_VALUE                    360
-#define STM32_PLLP_VALUE                    4
-#define STM32_PLLQ_VALUE                    8
-#define STM32_HPRE                          STM32_HPRE_DIV1
-#define STM32_PPRE1                         STM32_PPRE1_DIV2
-#define STM32_PPRE2                         STM32_PPRE2_DIV1
-#define STM32_RTCSEL                        STM32_RTCSEL_LSE
-#define STM32_RTCPRE_VALUE                  8
-#define STM32_MCO1SEL                       STM32_MCO1SEL_HSI
-#define STM32_MCO1PRE                       STM32_MCO1PRE_DIV1
-#define STM32_MCO2SEL                       STM32_MCO2SEL_SYSCLK
-#define STM32_MCO2PRE                       STM32_MCO2PRE_DIV5
-#define STM32_I2SSRC                        STM32_I2SSRC_CKIN
-#define STM32_PLLI2SN_VALUE                 192
-#define STM32_PLLI2SR_VALUE                 5
-#define STM32_PVD_ENABLE                    FALSE
-#define STM32_PLS                           STM32_PLS_LEV0
-#define STM32_BKPRAM_ENABLE                 FALSE
-*/
-
-/*
  * IRQ system settings.
  */
 #define STM32_IRQ_EXTI0_PRIORITY            6
@@ -112,6 +86,20 @@
 #define STM32_IRQ_EXTI20_PRIORITY           6
 #define STM32_IRQ_EXTI21_PRIORITY           15
 #define STM32_IRQ_EXTI22_PRIORITY           15
+
+#define STM32_IRQ_TIM1_BRK_TIM9_PRIORITY    7
+#define STM32_IRQ_TIM1_UP_TIM10_PRIORITY    7
+#define STM32_IRQ_TIM1_TRGCO_TIM11_PRIORITY 7
+#define STM32_IRQ_TIM1_CC_PRIORITY          7
+#define STM32_IRQ_TIM2_PRIORITY             7
+#define STM32_IRQ_TIM3_PRIORITY             7
+#define STM32_IRQ_TIM4_PRIORITY             7
+#define STM32_IRQ_TIM5_PRIORITY             7
+
+#define STM32_IRQ_USART1_PRIORITY           12
+#define STM32_IRQ_USART2_PRIORITY           12
+#define STM32_IRQ_USART6_PRIORITY           12
+
 
 /*
  * ADC driver system settings.

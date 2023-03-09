@@ -16,6 +16,7 @@ using namespace chibios_rt;
 
 extern "C" {
     void initW25q16(void);
+    void sleepW25q16(void);
 //    int16_t escribeStr50_C(uint16_t *sectorParam, const char *nombVar, char *valor);
 //    int16_t leeStr50_C(uint16_t *sectorParam, const char *nombParam, const char *valorDefault, char *valor);
 }
@@ -549,15 +550,37 @@ int16_t leeStr50(uint16_t *sectorParam, const char *nombParam, const char *valor
  * Maximum speed SPI configuration (27MHz -BR0==Fpclk/4-, CPHA=0, CPOL=0, MSb first).
   * Low speed SPI configuration (421.875kHz, CPHA=0, CPOL=0, MSb first).
  */
-static const SPIConfig spicfg = {
-  false,
-  NULL,
-  GPIOA,
-  GPIOA_W25Q16_CS,
-  SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA,
-  0
-};//
+//static const SPIConfig spicfg = {
+//  false,
+//  NULL,
+//  GPIOA,
+//  GPIOA_W25Q16_CS,
+//  SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA,
+//  0
+//};//
 
+
+static const SPIConfig spicfg = {
+    .circular         = false,
+    .slave            = false,
+    .data_cb          = NULL,
+    .error_cb         = NULL,
+    .ssport           = GPIOA,
+    .sspad            = GPIOA_W25Q16_CS,
+    .cr1              = SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_CPOL | SPI_CR1_CPHA,
+    .cr2              = 0U
+};
+
+
+void sleepW25q16(void)
+{
+    W25Q16_powerDown();
+    spiStop(&SPID1);
+    palSetPadMode(GPIOA, GPIOA_W25Q16_CS, PAL_MODE_INPUT_ANALOG);
+    palSetPadMode(GPIOA, GPIOA_SPI1_SCK, PAL_MODE_INPUT_ANALOG);
+    palSetPadMode(GPIOA, GPIOA_SPI1_MOSI, PAL_MODE_INPUT_ANALOG);
+    palSetPadMode(GPIOA, GPIOA_SPI1_MISO, PAL_MODE_INPUT_ANALOG);
+}
 
 void initW25q16(void)
 {

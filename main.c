@@ -20,6 +20,7 @@
 #include "alimCalle.h"
 #include "gets.h"
 #include "tty.h"
+#include "w25q16.h"
 
 
 void initSensores(void);
@@ -27,6 +28,7 @@ void initSerial(void);
 void leeGPS(void);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 void opciones(void);
+void sleepW25q16(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
@@ -86,36 +88,27 @@ int main(void) {
   chSysInit();
 
   initSerial();
+  parpadear(2,250);
+  initW25q16();
+  sleepW25q16();
   chprintf((BaseSequentialStream *)&SD2,"Inicializado\n\r");
-  chThdSleepMilliseconds(500);
+  chThdSleepMilliseconds(100);
   while (1==1)
   {
       chprintf((BaseSequentialStream *)&SD2,"A dormir\n\r");
+      chThdSleepMilliseconds(100);
+      sdStop(&SD2);
+      ports_set_lowpower();
       stop(15);
       if (GL_Flag_External_WakeUp==0)
       {
           initSerial();
           chprintf((BaseSequentialStream *)&SD2,"Timeout desde stop\n\r");
+          chThdSleepMilliseconds(100);
       }
       else
           opciones();
-//      {
-//          initSerial();
-//          while (1==1)
-//          {
-//              chprintf((BaseSequentialStream *)&SD2,"Deteccion:%d\n\r",GL_Flag_External_WakeUp);
-//              chprintf((BaseSequentialStream *)&SD2,"1 Hora y fecha\n\r");
-//              chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
-//              chprintf((BaseSequentialStream *)&SD2,"3 Desfases\n\r");
-//              result = preguntaNumeroC((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
-//              chprintf((BaseSequentialStream *)&SD2,"\n\r");
-//              if (result==0)
-//                  break;
-//          }
-//          chprintf((BaseSequentialStream *)&SD2,"Opcion elegida: %d\n\r",opcion);
-//          chprintf((BaseSequentialStream *)&SD2,"\n\r");
-//      }
-      parpadear(2,250);
+      parpadear(1,250);
   }
 
   palSetPad(GPIOC, GPIOC_LED);

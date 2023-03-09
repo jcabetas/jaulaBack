@@ -248,7 +248,7 @@ void W25Q16_powerDown(void) {
   spiExchange(&SPID1, 1, txbf, rxbf);
   spiUnselect(&SPID1);
   spiReleaseBus(&SPID1);
-  W25Q16_notBusy();
+  //W25Q16_notBusy();
 }
 
 /*

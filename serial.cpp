@@ -31,7 +31,7 @@ static const SerialConfig ser_cfg = {115200, 0, 0, 0, };
 void initSerial(void) {
     palClearPad(GPIOA, GPIOA_TX2);
     palSetPad(GPIOA, GPIOA_RX2);
-    palSetPadMode(GPIOA, GPIOA_TX2, PAL_MODE_ALTERNATE(7));
+    palSetPadMode(GPIOA, GPIOA_RX2, PAL_MODE_ALTERNATE(7));
     palSetPadMode(GPIOA, GPIOA_TX2, PAL_MODE_ALTERNATE(7));
     sdStart(&SD2, &ser_cfg);
 }
@@ -64,6 +64,7 @@ void ajustaHora(void)
 }
 
 
+
 void opciones(void)
 {
     int16_t result;
@@ -72,15 +73,20 @@ void opciones(void)
     initSerial();
     calendar::printFecha(buff,sizeof(buff));
     chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
+    calendar::printHoras(buff,sizeof(buff));
+    chprintf((BaseSequentialStream *)&SD2,"Hora amanecer y atardecer UTC: %s\n\r",buff);
     while (1==1)
     {
         chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");
         chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
         chprintf((BaseSequentialStream *)&SD2,"3 Desfases\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"4 Salir\n\r");
         result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
         if (result==0 && opcion==1)
             ajustaHora();
+        if (result==0 && opcion==4)
+            return;
         if (result==0)
             break;
     }

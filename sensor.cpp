@@ -18,20 +18,22 @@ extern "C"
 }
 
 static virtual_timer_t activaGate_vt;
-static void activaGate_cb(void *arg);
+static void activaGate_cb(ch_virtual_timer *arg, void *p);
 
 static virtual_timer_t apagaGate_vt;
-static void apagaGate_cb(void *arg);
+static void apagaGate_cb(ch_virtual_timer *arg, void *p);
 
 // apaga la puerta
-static void apagaGate_cb(void *arg) {
+static void apagaGate_cb(ch_virtual_timer *arg, void *p) {
     (void)arg;
+    (void)p;
 
 }
 
 // llega el tiempo de activar puerta
-static void activaGate_cb(void *arg) {
+static void activaGate_cb(ch_virtual_timer *arg, void *p) {
     (void)arg;
+    (void)p;
 //    palSetPad(GPIOA, GPIOA_GATETRIAC);     // enciende gate Triac
 //    chSysLockFromISR();
 //    chVTSetI(&apagaGate_vt, OSAL_US2I(500), apagaGate_cb, NULL);
@@ -44,7 +46,7 @@ uint16_t usRetraso;
  */
 extern volatile uint8_t msDelayLed;
 extern volatile uint16_t numCuentas;
-static void zc_cb(void *)
+static void zc_cb(ch_virtual_timer *)
 {
 //    palClearPad(GPIOA, GPIOA_GATETRIAC);  // apaga gate Triac
 //    if (palReadPad(GPIOA, GPIOA_ZC))

@@ -92,7 +92,7 @@ MCU  = cortex-m4
 ifeq ($(OS),Windows_NT)
   CHIBIOS = C:\ChibiStudio\ChibiOS203
 else
-  CHIBIOS  := /home/joaquin/ChibiStudio/ChibiOS_20.3.1
+  CHIBIOS  := /home/joaquin/ChibiStudio/chibios_stable-21.11.x
 endif
 
 CONFDIR  := ./cfg
@@ -110,7 +110,8 @@ include WEACT_F411RE/board.mk
 include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
+#include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
@@ -124,13 +125,14 @@ LDSCRIPT= $(STARTUPLD)/STM32F411xE.ld
 # setting.
 CSRC = $(ALLCSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
-       $(CHIBIOS)/os/various/syscalls.c \
        main.c sleep.c servoPWM.c 
+#       $(CHIBIOS)/os/various/syscalls.c \
 #       $(CONFDIR)/portab.c usbcfg.c \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC) sensor.cpp calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp serial.cpp
+CPPSRC = $(ALLCPPSRC) sensor.cpp calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp serial.cpp \
+ 					  w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp 
 #         ADC/adcUtils.cpp \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
          SMS/sms.cpp SMS/manejaAT.cpp SMS/sim800.cpp  SMS/procesaOrden.cpp SMS/threadSMS.cpp \

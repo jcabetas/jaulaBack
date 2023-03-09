@@ -22,8 +22,8 @@ extern event_source_t sendMsgCAN_source;
 uint16_t calendar::minAmanecer = 370;
 uint16_t calendar::minAnochecer = 1194;
 uint16_t calendar::diaCalculado = 9999;
-float calendar::longitudRad = -0.0646295422; //  -3.703
-float calendar::latitudRad = 0.7054044878;   //  40.4167
+float calendar::longitudRad = -0.0697766927f; //  -3.99791
+float calendar::latitudRad = 0.7058975433f;   //  40.44495
 time_t calendar::fechaCambioVer2Inv = 0;
 time_t calendar::fechaCambioInv2Ver = 0;
 struct fechaHora calendar::fechaHoraNow = {0,0};

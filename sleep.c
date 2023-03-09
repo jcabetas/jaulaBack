@@ -36,7 +36,7 @@ void ports_set_lowpower(void)
   /* Set all I/O pins to Analog inputs */
   for(uint8_t i = 0; i < 16; i++ )
    {
-       if (i!=LINE_A0_KEY && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK && i!=GPIOA_W25Q16_CS && i!=GPIOA_TX2 && i!=GPIOA_RX2)
+       if (i!=LINE_A0_KEY && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK && i!=GPIOA_W25Q16_CS)   // && i!=GPIOA_TX2 && i!=GPIOA_RX2)
          palSetPadMode( GPIOA, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOB, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
