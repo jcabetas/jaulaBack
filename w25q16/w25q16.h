@@ -20,8 +20,10 @@
 void W25Q16_init(void);
 void W25Q16_write(uint16_t page, uint8_t pageAddress, uint8_t val);
 void W25Q16_write_u16(uint16_t page, uint8_t pageAddress, uint16_t val);
+void W25Q16_write_i16(uint16_t page, uint8_t pageAddress, int16_t val);
 uint8_t W25Q16_read(uint16_t page, uint8_t pageAddress);
 uint16_t W25Q16_read_u16(uint16_t page, uint8_t pageAddress);
+int16_t W25Q16_read_i16(uint16_t page, uint8_t pageAddress) ;
 void W25Q16_initStreamWrite(uint16_t page, uint8_t pageAddress);
 void W25Q16_streamWrite(uint16_t *page, uint8_t *pageAddress, uint8_t val);
 void W25Q16_closeStreamWrite(void);

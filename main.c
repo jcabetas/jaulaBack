@@ -16,10 +16,10 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "varsFlash.h"
 #include "alimCalle.h"
 #include "gets.h"
 #include "tty.h"
+#include "w25q16/variables.h"
 #include "w25q16.h"
 
 
@@ -29,6 +29,7 @@ void leeGPS(void);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 void opciones(void);
 void sleepW25q16(void);
+void leeVariables(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
@@ -87,21 +88,11 @@ int main(void) {
   halInit();
   chSysInit();
 
-  parpadear(2,250);
-  initW25q16();
-  sleepW25q16();
-  // prueba de bajo consumo solo
-  while (1==1)
-  {
-    ports_set_lowpower();
-    stop(15);
-  }
-
-
+  leeVariables();
   initSerial();
   parpadear(2,250);
-  initW25q16();
-  sleepW25q16();
+//  initW25q16();
+//  sleepW25q16();
   chprintf((BaseSequentialStream *)&SD2,"Inicializado\n\r");
   chThdSleepMilliseconds(100);
   while (1==1)
@@ -109,11 +100,14 @@ int main(void) {
       chprintf((BaseSequentialStream *)&SD2,"A dormir\n\r");
       chThdSleepMilliseconds(100);
       sdStop(&SD2);
-      ports_set_lowpower();
-      stop(15);
+      //ports_set_lowpower();
+      //stop(15);
+      chThdSleepMilliseconds(1000);
       if (GL_Flag_External_WakeUp==0)
       {
           initSerial();
+          parpadear(1,250);
+          leeVariables();
           chprintf((BaseSequentialStream *)&SD2,"Timeout desde stop\n\r");
           chThdSleepMilliseconds(100);
       }
@@ -122,12 +116,7 @@ int main(void) {
       parpadear(1,250);
   }
 
-  palSetPad(GPIOC, GPIOC_LED);
-  parpadear(5,200);
   ports_set_lowpower();
-
-
-
 
   initServo();
   leeGPS(); // leer GPS

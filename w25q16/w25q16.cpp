@@ -4,6 +4,7 @@
 using namespace chibios_rt;
 
 #include <w25q16/w25q16.h>
+#include <stdio.h>
 #include "string.h"
 
 #define tty2 (BaseSequentialStream *)&SD2
@@ -76,6 +77,32 @@ uint16_t W25Q16_read_u16(uint16_t page, uint8_t pageAddress) {
 
 
 /*
+ *  Purpose :   Reads int16_t from the flash page and page address.  The W25Q16 has
+ *              8192 pages with 256 bytes in a page.  Both page and byte addresses
+ *              start at 0. Page ends at address 8191 and page address ends at 255.
+ *              First byte is high value
+ */
+
+int16_t W25Q16_read_i16(uint16_t page, uint8_t pageAddress) {
+  uint8_t txbf[6], rxbf[6];
+  rxbf[4] = 0;
+  rxbf[5] = 0;
+  spiAcquireBus(&SPID1);
+  txbf[0] = READ_DATA;
+  txbf[1] = (page >> 8) & 0xFF;
+  txbf[2] = page & 0xFF;
+  txbf[3] = pageAddress;
+  spiSelect(&SPID1);
+  spiExchange(&SPID1, 6, txbf, rxbf);
+  spiUnselect(&SPID1);
+  spiReleaseBus(&SPID1);
+  W25Q16_notBusy();
+  int16_t valor;
+  memcpy(&valor, &rxbf[4],2);
+  return valor;
+}
+
+/*
  *  Purpose :   Writes a byte to the flash page and page address.  The W25Q16 has
  *              8192 pages with 256 bytes in a page.  Both page and byte addresses
  *              start at 0. Page ends at address 8191 and page address ends at 255.
@@ -124,6 +151,31 @@ void W25Q16_write_u16(uint16_t page, uint8_t pageAddress, uint16_t val) {
     W25Q16_writeDisable();
 }
 
+/*
+ *  Purpose :   Writes int16_t to the flash page and page address.  The W25Q16 has
+ *              8192 pages with 256 bytes in a page.  Both page and byte addresses
+ *              start at 0. Page ends at address 8191 and page address ends at 255.
+ *              First byte is high value
+ */
+void W25Q16_write_i16(uint16_t page, uint8_t pageAddress, int16_t val) {
+    uint8_t txbf[7], rxbf[7];
+    W25Q16_writeEnable();
+
+    spiAcquireBus(&SPID1);
+    txbf[0] = PAGE_PROGRAM;
+    txbf[1] = (page >> 8) & 0xFF;
+    txbf[2] = page & 0xFF;
+    txbf[3] = pageAddress;
+    memcpy(&txbf[4],&val, 2);
+    //txbf[4] = val>>8;
+    //txbf[5] = val & 0xFF;
+    spiSelect(&SPID1);
+    spiExchange(&SPID1, 6, txbf, rxbf);
+    spiUnselect(&SPID1);
+    spiReleaseBus(&SPID1);
+    W25Q16_notBusy();
+    W25Q16_writeDisable();
+}
 /*
  *  Purpose :   Initializes flash for stream write, e.g. write more than one byte
  *              consecutively.  Both page and byte addresses start at 0. Page
