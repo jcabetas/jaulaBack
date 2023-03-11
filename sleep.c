@@ -36,7 +36,7 @@ void ports_set_lowpower(void)
   /* Set all I/O pins to Analog inputs */
   for(uint8_t i = 0; i < 16; i++ )
    {
-       if (i!=LINE_A0_KEY && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK && i!=GPIOA_W25Q16_CS)   // && i!=GPIOA_TX2 && i!=GPIOA_RX2)
+       if (i!=LINE_A0_KEY && i!=GPIOA_W25Q16_CS)// && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK )   // && i!=GPIOA_TX2 && i!=GPIOA_RX2)
          palSetPadMode( GPIOA, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOB, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
@@ -45,9 +45,9 @@ void ports_set_lowpower(void)
        palSetPadMode( GPIOH, ( i % 2 ),PAL_MODE_INPUT_ANALOG );
    }
   palSetLineMode(LINE_A0_KEY,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
-  palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);    /* PWM*/
-  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
-  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
+  //palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);    /* PWM*/
+  //palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLUP);
+  //palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_ALTERNATE(0) | PAL_STM32_PUPDR_PULLDOWN);
 }
 
 

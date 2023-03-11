@@ -87,6 +87,17 @@ int main(void) {
   halInit();
   chSysInit();
 
+  parpadear(2,250);
+  initW25q16();
+  sleepW25q16();
+  // prueba de bajo consumo solo
+  while (1==1)
+  {
+    ports_set_lowpower();
+    stop(15);
+  }
+
+
   initSerial();
   parpadear(2,250);
   initW25q16();
