@@ -25,11 +25,13 @@
 
 void initSensores(void);
 void initSerial(void);
+void closeSerial(void);
 void leeGPS(void);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
+//void opciones(void);
+//void sleepW25q16(void);
+void leeVariablesC(void);
 void opciones(void);
-void sleepW25q16(void);
-void leeVariables(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
@@ -84,32 +86,38 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 int main(void) {
     uint8_t estDes;
     uint16_t sec2change;
+    uint8_t bajada;
 
   halInit();
   chSysInit();
-
-  leeVariables();
   initSerial();
   parpadear(2,250);
-//  initW25q16();
-//  sleepW25q16();
+  bajada = 0;
+//  opciones();
+  leeVariablesC();
   chprintf((BaseSequentialStream *)&SD2,"Inicializado\n\r");
   chThdSleepMilliseconds(100);
   while (1==1)
   {
+      initSerial();
       chprintf((BaseSequentialStream *)&SD2,"A dormir\n\r");
       chThdSleepMilliseconds(100);
+      closeSerial();
       sdStop(&SD2);
-      //ports_set_lowpower();
-      //stop(15);
-      chThdSleepMilliseconds(1000);
+      ports_set_lowpower();
+      stop(30);
       if (GL_Flag_External_WakeUp==0)
       {
-          initSerial();
           parpadear(1,250);
-          leeVariables();
+          initSerial();
           chprintf((BaseSequentialStream *)&SD2,"Timeout desde stop\n\r");
           chThdSleepMilliseconds(100);
+          closeSerial();
+          if (bajada)
+              mueveServoPos(0);
+          else
+              mueveServoPos(100);
+          bajada = !bajada;
       }
       else
           opciones();
@@ -118,7 +126,6 @@ int main(void) {
 
   ports_set_lowpower();
 
-  initServo();
   leeGPS(); // leer GPS
   while (!enHora) // espero a que termine
   {

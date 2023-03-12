@@ -110,7 +110,6 @@ int16_t W25Q16_read_i16(uint16_t page, uint8_t pageAddress) {
 void W25Q16_write(uint16_t page, uint8_t pageAddress, uint8_t val) {
     uint8_t txbf[6], rxbf[6];
     W25Q16_writeEnable();
-
     spiAcquireBus(&SPID1);
     txbf[0] = PAGE_PROGRAM;
     txbf[1] = (page >> 8) & 0xFF;
@@ -135,7 +134,6 @@ void W25Q16_write(uint16_t page, uint8_t pageAddress, uint8_t val) {
 void W25Q16_write_u16(uint16_t page, uint8_t pageAddress, uint16_t val) {
     uint8_t txbf[7], rxbf[7];
     W25Q16_writeEnable();
-
     spiAcquireBus(&SPID1);
     txbf[0] = PAGE_PROGRAM;
     txbf[1] = (page >> 8) & 0xFF;
@@ -160,13 +158,13 @@ void W25Q16_write_u16(uint16_t page, uint8_t pageAddress, uint16_t val) {
 void W25Q16_write_i16(uint16_t page, uint8_t pageAddress, int16_t val) {
     uint8_t txbf[7], rxbf[7];
     W25Q16_writeEnable();
-
+    int16_t val2 = val;
     spiAcquireBus(&SPID1);
     txbf[0] = PAGE_PROGRAM;
     txbf[1] = (page >> 8) & 0xFF;
     txbf[2] = page & 0xFF;
     txbf[3] = pageAddress;
-    memcpy(&txbf[4],&val, 2);
+    memcpy(&txbf[4],&val2, 2);
     //txbf[4] = val>>8;
     //txbf[5] = val & 0xFF;
     spiSelect(&SPID1);
@@ -254,6 +252,7 @@ void W25Q16_initStreamRead(uint16_t page, uint8_t pageAddress) {
  */
 uint8_t W25Q16_streamRead(uint16_t *page, uint8_t *pageAddress) {
   uint8_t txbf[1], rxbf[1];
+  txbf[0] = 0;
   spiExchange(&SPID1, 1, txbf, rxbf);
   (*pageAddress)++;
   if (*pageAddress==0) // cambio de pagina
@@ -271,6 +270,7 @@ uint8_t W25Q16_streamRead(uint16_t *page, uint8_t *pageAddress) {
  */
 uint8_t W25Q16_streamPeek(uint16_t *page, uint8_t *pageAddress) {
   uint8_t txbf[1], rxbf[1];
+  txbf[0] = 0;
   spiExchange(&SPID1, 1, txbf, rxbf);
   W25Q16_closeStreamRead();
   W25Q16_initStreamRead(*page, *pageAddress);

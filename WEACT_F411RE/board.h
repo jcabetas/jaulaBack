@@ -168,11 +168,11 @@
 #define GPIOF_PIN14                 14U
 #define GPIOF_PIN15                 15U
 
-#define GPIOG_PIN0                  0ULINE_A8_ZC
+#define GPIOG_PIN0                  0U
 #define GPIOG_PIN1                  1U
 #define GPIOG_PIN2                  2U
 #define GPIOG_PIN3                  3U
-#define GPIOG_PIN4                  4U8
+#define GPIOG_PIN4                  4U
 #define GPIOG_PIN5                  5U
 #define GPIOG_PIN6                  6U
 #define GPIOG_PIN7                  7U
@@ -244,7 +244,7 @@
 #define LINE_ADC1_IN8               PAL_LINE(GPIOB, 0U)
 #define LINE_B1_VBAT                PAL_LINE(GPIOB, 1U)
 #define LINE_SWO                    PAL_LINE(GPIOB, 3U)
-#define LINE_ARD_D3                 PAL_LINE(GPIOB, 3U)8
+#define LINE_ARD_D3                 PAL_LINE(GPIOB, 3U)
 #define LINE_B4                     PAL_LINE(GPIOB, 4U)
 #define LINE_ARD_D4                 PAL_LINE(GPIOB, 5U)
 #define LINE_ARD_D10                PAL_LINE(GPIOB, 6U)

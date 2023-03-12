@@ -110,7 +110,7 @@ uint16_t margenAdaptacion;
 //  pageAddress = 3;
 //  W25Q16_initStreamRead(page, pageAddress);
 //  do
-//  {
+//  {leeVariableU16
 //    byte = W25Q16_streamRead(&page, &pageAddress);
 //    if (byte==0)
 //        break;
@@ -578,7 +578,7 @@ static const SPIConfig spicfg = {
     .cr2              = 0U
 };
 
-hhh
+
 void sleepW25q16(void)
 {
     W25Q16_powerDown();

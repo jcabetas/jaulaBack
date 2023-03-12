@@ -108,22 +108,64 @@ void limpiaBuffer(BaseChannel *pSD)
 //      }
 //    buffer[pos]=0;
 //}
-void chgetsNoEchoTimeOut(BaseChannel   *pSD, uint8_t *buffer, uint16_t bufferSize,systime_t timeout, uint8_t *huboTimeout)
+//void chgetsNoEchoTimeOut(BaseChannel   *pSD, uint8_t *buffer, uint16_t bufferSize,systime_t timeout, uint8_t *huboTimeout)
+//{
+//    uint8_t ch;
+//    uint16_t pos=0;
+//    *huboTimeout = 0;
+//    while (1==1)
+//      {
+//      ch = chgetchTimeOut(pSD, timeout, huboTimeout);
+//      if (*huboTimeout) // timeout
+//         break;
+//      if (ch=='\r')
+//         continue;
+//      if (ch=='\n')
+//         break;
+//      if (pos<bufferSize)
+//        buffer[pos++] = ch;
+//      }
+//    buffer[pos]=0;
+//}
+
+void chgetsNoEchoTimeOut(BaseChannel   *tty, uint8_t *buffer, uint16_t size,systime_t timeout, uint8_t *huboTimeout)
 {
-    uint8_t ch;
-    uint16_t pos=0;
-    *huboTimeout = 0;
-    while (1==1)
+    uint8_t ch,ch1,ch2;
+    int pos=0;
+    while (pos<size)
       {
-      ch = chgetchTimeOut(pSD, timeout, huboTimeout);
+      ch = chgetchTimeOut(tty, timeout, huboTimeout);
       if (*huboTimeout) // timeout
          break;
-      if (ch=='\r')
-         continue;
-      if (ch=='\n')
+      if (ch=='\n' || ch=='\r')
+         {
+            streamPut(tty, (uint8_t)ch);
          break;
-      if (pos<bufferSize)
-        buffer[pos++] = ch;
+         }
+      if (ch==8 && pos>0)
+         {
+            streamPut(tty, (uint8_t)ch);
+         pos--;
+         continue;
+         }
+      if (ch>=0x20)
+         {
+        streamPut(tty, (uint8_t)ch);
+         buffer[pos++] = ch;
+         continue;
+         }
+      if (ch==0x1b) // escape
+         {
+         ch1 = chgetch(tty);
+         if (ch1 != 0x5b) continue; // no es codigo de direccion
+         ch2 = chgetch(tty);
+         if (ch2 ==0x44 && pos>0)
+            {
+             streamPut(tty, 8);
+            pos--; //flecha izquierda
+            }
+         continue;
+         }
       }
     buffer[pos]=0;
 }
@@ -295,11 +337,14 @@ int16_t preguntaNumero(BaseChannel *ttyBC, const char *msg, int16_t *numeroPtr, 
 {
     uint8_t buffer[50];
     int32_t resultado;
+    uint8_t huboTimeout;
     BaseSequentialStream *tty = (BaseSequentialStream *)ttyBC;
     chprintf((BaseSequentialStream *)tty,msg);
     chprintf((BaseSequentialStream *)tty," [%d...%d]:", valorMin, valorMax);
-    chgets(ttyBC, buffer,sizeof(buffer));
+    chgetsNoEchoTimeOut(ttyBC, buffer,sizeof(buffer), TIME_MS2I(30000), &huboTimeout);
     chprintf((BaseSequentialStream *)tty,"\n\r");
+    if (huboTimeout==1)
+      return 2;
     if (!strncmp("",(char *)buffer,10))     // en blanco, acepto defecto
     {
         return 1;
