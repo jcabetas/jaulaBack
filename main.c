@@ -34,6 +34,7 @@ int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 //void opciones(void);
 //void sleepW25q16(void);
 void leeVariablesC(void);
+void printFechaC(char *buff, uint16_t longBuff);
 void printSerial(char *msg);
 void opciones(void);
 extern uint8_t enHora, hayUbicacion;
@@ -91,7 +92,7 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 int main(void) {
     uint8_t estDes;
     uint16_t sec2change;
-    char buffer[90];
+    char buffer[90], buff[50];
 
   halInit();
   chSysInit();
@@ -102,6 +103,9 @@ int main(void) {
   {
       leeVariablesC();
       estadoDeseadoPuertaC(&estDes, &sec2change);
+      printFechaC(buff,sizeof(buff));
+      chsnprintf(buffer,sizeof(buffer),"Fecha actual UTC: %s\n\r",buff);
+      printSerial(buffer);
       chsnprintf(buffer,sizeof(buffer),"Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",autoPuerta, estDes,sec2change);
       printSerial(buffer);
       if (estDes == 1)

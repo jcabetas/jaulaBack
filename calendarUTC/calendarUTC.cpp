@@ -36,6 +36,7 @@ struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 extern "C"
 {
     void leeHora(struct tm *tmAhora);
+    void printFechaC(char *buff, uint16_t longBuff);
     void actualizaAmanAnoch(void);
     void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
 }
@@ -381,6 +382,11 @@ void leeHora(struct tm *tmAhora)
     calendar::getFecha(tmAhora);
 }
 
+void printFechaC(char *buff, uint16_t longBuff)
+{
+  calendar::printFecha(buff, longBuff);
+}
+
 void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer, uint32_t *secAnochecer)
 {
     struct tm tim;
@@ -394,12 +400,11 @@ void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer
 void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
 {
     uint32_t secActual, secAmanecer, secAnochecer, secsProxCambio;
-    char buffer[100];
     calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
-    if (secActual<secAmanecer)  // antes de amanecer
-        secsProxCambio = secAmanecer - secActual + 45;
-    else if (secActual<secAnochecer) // de dia
-        secsProxCambio = secAnochecer - secActual + 45;
+    if (secActual<secAmanecer+ 60*addAmanecer)  // antes de amanecer
+        secsProxCambio = secAmanecer + 60*addAmanecer - secActual + 45;
+    else if (secActual<secAnochecer + 60*addAtardecer) // de dia
+        secsProxCambio = secAnochecer + 60*addAtardecer - secActual + 45;
     else // ya de noche, prox cambio a las 1am del dia siguiente
         secsProxCambio = (uint16_t)(86400L-secActual + 3600L + 45L);
     *sec2change = secsProxCambio;
@@ -410,7 +415,7 @@ void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
         *estDes = 1;
     else if (autoPuerta==2)
     {
-        if (secActual>=secAmanecer+addAmanecer && secActual<=secAnochecer+addAtardecer)
+        if (secActual>=secAmanecer+60*addAmanecer && secActual<=secAnochecer+60*addAtardecer)
             *estDes = 0;
         else
             *estDes = 1;
@@ -422,8 +427,6 @@ void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
       else
           *estDes = 0;
     }
-//    chsnprintf(buffer,sizeof(buffer),"Calendar, auto puerta:%d estado puerta:%d\n\r",autoPuerta, *estDes);
-//    printSerialCPP(buffer);
 }
 
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change)
