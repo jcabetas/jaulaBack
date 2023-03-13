@@ -11,6 +11,11 @@
 #include "chprintf.h"
 #include "alimCalle.h"
 
+extern "C" {
+    void mueveServoPosC(uint8_t porcPosicion);
+}
+
+
 static PWMConfig pwmcfg = {
   3125000, /* 48 MHz PWM clock frequency */
     62500,   /* PWM period 20 millisecond */
@@ -33,12 +38,10 @@ void initServo(void)
  *   Salida servo: TIM4CH3 (PB8)
  */
     palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
-    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_PUSHPULL);
-    palClearPad(GPIOB, GPIOB_ONSERVO);
-	pwmStart(&PWMD4, &pwmcfg);
-	mueveServoAncho(2980);
-    chThdSleepMilliseconds(2000);
+//    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_PUSHPULL);
+    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_OPENDRAIN);
     palSetPad(GPIOB, GPIOB_ONSERVO);
+	pwmStart(&PWMD4, &pwmcfg);
 }
 
 void closeServo(void)
@@ -51,12 +54,14 @@ void closeServo(void)
 void mueveServoAncho(uint16_t ancho)
 {
   initServo();
+  palClearPad(GPIOB, GPIOB_ONSERVO);
   // minimo 2980, maximo 6068, medio 4529
   if (ancho<2980) ancho=2980;
   if (ancho>6068) ancho=6068;
   if (PWMD4.state==PWM_STOP)
       pwmStart(&PWMD4, &pwmcfg);
   pwmEnableChannel(&PWMD4, 2, ancho);
+  chThdSleepMilliseconds(2000);
   closeServo();
 }
 
@@ -67,3 +72,9 @@ void mueveServoPos(uint8_t porcPosicion)
   ancho = (uint16_t) (2980.0f+3088.0f*porcPosicion/100.0f);
   mueveServoAncho(ancho);
 }
+
+void mueveServoPosC(uint8_t porcPosicion)
+{
+    mueveServoPos(porcPosicion);
+}
+

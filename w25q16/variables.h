@@ -12,6 +12,7 @@
 #define POS_ADDATARDECER    4
 #define POS_AUTOPUERTA      6
 #define POS_MARGENADAPT     8
+#define POS_DSADDPORDIA    10
 
 void initW25q16(void);
 void sleepW25q16(void);

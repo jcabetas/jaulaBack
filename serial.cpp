@@ -22,9 +22,14 @@ extern "C" {
     void initSerial(void);
     void closeSerial(void);
     void opciones(void);
+    void printSerial(char *msg);
 }
+
 void ajustaP(uint16_t porcP);
 uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t sec);
+void diSecAmanecerAnochecer(uint16_t *secActual, uint16_t *secAmanecer, uint16_t *secAnochecer);
+void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
+void mueveServoPos(uint8_t porcPosicion);
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -51,10 +56,25 @@ void closeSerial(void) {
     sdStop(&SD2);
 }
 
+void printSerial(char *msg)
+{
+    initSerial();
+    chprintf((BaseSequentialStream *)&SD2,msg);
+    chThdSleepMilliseconds(10);
+    closeSerial();
+}
+
+void printSerialCPP(char *msg)
+{
+  printSerial(msg);
+}
+
 void ajustaPuerta(void)
 {
     int16_t result;
     int16_t opcion;
+    uint8_t estDes;
+    uint16_t sec2change;
     chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaStr[autoPuerta]);
     uint16_t autoPuertaOld = autoPuerta;
     while (1==1)
@@ -66,7 +86,6 @@ void ajustaPuerta(void)
         chprintf((BaseSequentialStream *)&SD2,"3 Abierta y cada dia 1 hora menos\n\r");
         chprintf((BaseSequentialStream *)&SD2,"4 Salir\n\r");
         result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 0, 4);
-        //chprintf((BaseSequentialStream *)&SD2,"\n\r");
         if (result==2 || (result==0 && opcion==4))
         {
             closeSerial();
@@ -81,6 +100,11 @@ void ajustaPuerta(void)
               chprintf((BaseSequentialStream *)&SD2,"=> margen inicial establecido a %d minutos\n\r",margenAdaptacion);
           }
           escribeVariables();
+          calendar::estadoDeseadoPuerta(&estDes, &sec2change);
+          if (estDes == 1)
+              mueveServoPos(0);
+          else
+              mueveServoPos(100);
           break;
         }
     }
@@ -160,17 +184,26 @@ void opciones(void)
 {
     int16_t result;
     int16_t opcion;
+    uint8_t estDes;
+    uint16_t sec2change;
+    uint32_t secActual, secAmanecer, secAnochecer;
+
     char buff[50];
     initSerial();
     while (1==1)
     {
         leeVariables();
-        calendar::printFecha(buff,sizeof(buff));
+        calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
+        calendar::estadoDeseadoPuerta(&estDes, &sec2change);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        calendar::printFecha(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
+        calendar::printHoras(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Hora amanecer y atardecer UTC: %s\n\r",buff);
+        chprintf((BaseSequentialStream *)&SD2,"sec. amanecer:%d. anochecer:%d\n\r",secAmanecer, secAnochecer);
+        chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d\n\r",secActual, sec2change, estDes);
         chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d\n\r",addAmanecer, addAtardecer);
-        chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaStr[autoPuerta]);
+        chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaStr[autoPuerta]);
         chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");
         chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
         chprintf((BaseSequentialStream *)&SD2,"3 Minutos adicionales\n\r");

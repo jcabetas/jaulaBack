@@ -18,6 +18,7 @@
 #include "hal.h"
 #include "alimCalle.h"
 #include "gets.h"
+#include "chprintf.h"
 #include "tty.h"
 #include "w25q16/variables.h"
 #include "w25q16.h"
@@ -27,10 +28,13 @@ void initSensores(void);
 void initSerial(void);
 void closeSerial(void);
 void leeGPS(void);
+void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
+void mueveServoPosC(uint8_t porcPosicion);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 //void opciones(void);
 //void sleepW25q16(void);
 void leeVariablesC(void);
+void printSerial(char *msg);
 void opciones(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
@@ -41,12 +45,12 @@ extern uint8_t GL_Flag_External_WakeUp;
  * BUCLE
  * Si es el primer arranque, pon RTC en hora con GPS
  * Para cualquier arranque
- * - lee la hora del RTC
- * - Ver estado de sensoresinitSerial
- * - Leer mensajes del GPRS y si procede, enviar alarmas
- * - Actualizar estado del servo (si es de noche o no)
- * - Analizar segundos que faltan para cambiar de estado
- * - Lanzar stop con tiempo restante
+ * - leer variables
+ * - lee la hora del RTC#include "chprintf.h"
+ * - bucle:
+ *      - Situar la puerta con la logica definida
+ *      - Analizar segundos que faltan para cambiar de estado
+ *      - Si el dia del año difiere, actualizar hora de amanecer
  *
  * HARDWARE
  * - Blackpill
@@ -68,6 +72,7 @@ extern uint8_t GL_Flag_External_WakeUp;
 
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
+extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 
 
 void parpadear(uint8_t numVeces,uint16_t ms)
@@ -86,42 +91,35 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 int main(void) {
     uint8_t estDes;
     uint16_t sec2change;
-    uint8_t bajada;
+    char buffer[90];
 
   halInit();
   chSysInit();
   initSerial();
   parpadear(2,250);
-  bajada = 0;
-//  opciones();
-  leeVariablesC();
-  chprintf((BaseSequentialStream *)&SD2,"Inicializado\n\r");
-  chThdSleepMilliseconds(100);
+  printSerial("Inicializado\n\r");
   while (1==1)
   {
-      initSerial();
-      chprintf((BaseSequentialStream *)&SD2,"A dormir\n\r");
-      chThdSleepMilliseconds(100);
-      closeSerial();
-      sdStop(&SD2);
+      leeVariablesC();
+      estadoDeseadoPuertaC(&estDes, &sec2change);
+      chsnprintf(buffer,sizeof(buffer),"Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",autoPuerta, estDes,sec2change);
+      printSerial(buffer);
+      if (estDes == 1)
+          mueveServoPosC(0);
+      else
+          mueveServoPosC(100);
       ports_set_lowpower();
-      stop(30);
+      chsnprintf(buffer,sizeof(buffer),"A dormir %d s\n\r",sec2change);
+      printSerial(buffer);
+      ports_set_lowpower();
+      stop(sec2change);
       if (GL_Flag_External_WakeUp==0)
       {
           parpadear(1,250);
-          initSerial();
-          chprintf((BaseSequentialStream *)&SD2,"Timeout desde stop\n\r");
-          chThdSleepMilliseconds(100);
-          closeSerial();
-          if (bajada)
-              mueveServoPos(0);
-          else
-              mueveServoPos(100);
-          bajada = !bajada;
+          printSerial("Timeout desde stop\n\r");
       }
       else
           opciones();
-      parpadear(1,250);
   }
 
   ports_set_lowpower();
@@ -157,9 +155,9 @@ int main(void) {
       estadoDeseadoPuerta(&estDes, &sec2change);
       palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
       if (estDes==0)
-          mueveServoPos(0);
+          mueveServoPosC(0);
       else
-          mueveServoPos(100);
+          mueveServoPosC(100);
       // dale tiempo para posicionarse
       chThdSleepMilliseconds(2000);
       palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo

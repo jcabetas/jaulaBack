@@ -19,12 +19,14 @@ using namespace chibios_rt;
     #define POS_ADDATARDECER    4
     #define POS_AUTOPUERTA      6
     #define POS_MARGENADAPT     8
+    #define POS_DSADDPORDIA    10
  */
 
 int16_t addAmanecer;
 int16_t addAtardecer;
 uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 uint16_t margenAdaptacionInicial, margenAdaptacion;
+int16_t dsAddPordia;
 
 extern "C" {
     void leeVariablesC(void);
@@ -53,6 +55,7 @@ void reseteaEEprom(void)
   W25Q16_write_i16(0, POS_ADDATARDECER, 30);
   W25Q16_write_u16(0, POS_AUTOPUERTA, 2);
   W25Q16_write_u16(0, POS_MARGENADAPT, 0);
+  W25Q16_write_i16(0, POS_DSADDPORDIA, 0);
   W25Q16_write_u16(0, 0, 0x7851);
 }
 

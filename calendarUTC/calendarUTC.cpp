@@ -7,17 +7,21 @@ using namespace chibios_rt;
 #include "gets.h"
 #include "stdlib.h"
 #include "math.h"
-//#include "colas.h"
-//#include "dispositivos.h"
 
 void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano);
 void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds);
 void completeYdayWday(struct tm *tim);
 uint8_t dayofweek(uint16_t y, uint16_t m, uint16_t d);
+void printSerial(char *msg);
+void printSerialCPP(char *msg);
+
+
+extern int16_t addAmanecer;
+extern int16_t addAtardecer;
+extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 
 extern struct queu_t colaMsgTxCan;
 extern event_source_t sendMsgCAN_source;
-
 
 uint16_t calendar::minAmanecer = 370;
 uint16_t calendar::minAnochecer = 1194;
@@ -32,7 +36,8 @@ struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 extern "C"
 {
     void leeHora(struct tm *tmAhora);
-    void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change);
+    void actualizaAmanAnoch(void);
+    void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
 }
 
 
@@ -224,6 +229,7 @@ void calendar::ajustaHorasLuz(void)
     diaCalculado = fechaNow.tm_yday;
 }
 
+
 // debe ser llamado al inicio, en cambio de fecha, o cuando cambia el año
 void calendar::ajustaFechasCambHorario(void)
 {
@@ -364,6 +370,10 @@ void calendar::updateEveryDs(void)
     }
 }
 
+void actualizaAmanAnoch(void)
+{
+    calendar::ajustaHorasLuz();
+}
 
 void leeHora(struct tm *tmAhora)
 {
@@ -371,16 +381,53 @@ void leeHora(struct tm *tmAhora)
     calendar::getFecha(tmAhora);
 }
 
-
-
-void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
+void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer, uint32_t *secAnochecer)
 {
     struct tm tim;
     calendar::init();
     calendar::getFecha(&tim);
-    *estDes = 0;
-    if (tim.tm_min%2 == 1)
+    *secActual = 3600L*tim.tm_hour+60L*tim.tm_min + tim.tm_sec;
+    *secAmanecer = 60*minAmanecer;
+    *secAnochecer = 60*minAnochecer;
+}
+
+void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
+{
+    uint32_t secActual, secAmanecer, secAnochecer, secsProxCambio;
+    char buffer[100];
+    calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
+    if (secActual<secAmanecer)  // antes de amanecer
+        secsProxCambio = secAmanecer - secActual + 45;
+    else if (secActual<secAnochecer) // de dia
+        secsProxCambio = secAnochecer - secActual + 45;
+    else // ya de noche, prox cambio a las 1am del dia siguiente
+        secsProxCambio = (uint16_t)(86400L-secActual + 3600L + 45L);
+    *sec2change = secsProxCambio;
+    // ponemos estado de puerta
+    if (autoPuerta==0)
+        *estDes = 0;
+    else if (autoPuerta==1)
         *estDes = 1;
-    *sec2change = 60 - tim.tm_sec;
+    else if (autoPuerta==2)
+    {
+        if (secActual>=secAmanecer+addAmanecer && secActual<=secAnochecer+addAtardecer)
+            *estDes = 0;
+        else
+            *estDes = 1;
+    }
+    else if (autoPuerta==3)
+    {
+      if (secActual>=secAmanecer && secActual<=secAnochecer)
+          *estDes = 1;
+      else
+          *estDes = 0;
+    }
+//    chsnprintf(buffer,sizeof(buffer),"Calendar, auto puerta:%d estado puerta:%d\n\r",autoPuerta, *estDes);
+//    printSerialCPP(buffer);
+}
+
+void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change)
+{
+    calendar::estadoDeseadoPuerta(estDes, sec2change);
 }
 
