@@ -12,9 +12,8 @@ void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano
 void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds);
 void completeYdayWday(struct tm *tim);
 uint8_t dayofweek(uint16_t y, uint16_t m, uint16_t d);
-void printSerial(char *msg);
-void printSerialCPP(char *msg);
-
+void printSerial(const char *msg);
+void printSerialCPP(const char *msg);
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -30,6 +29,7 @@ float calendar::longitudRad = -0.0697766927f; //  -3.99791
 float calendar::latitudRad = 0.7058975433f;   //  40.44495
 time_t calendar::fechaCambioVer2Inv = 0;
 time_t calendar::fechaCambioInv2Ver = 0;
+uint16_t calendar::mdayActualizada = 99;
 struct fechaHora calendar::fechaHoraNow = {0,0};
 struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 
@@ -39,6 +39,7 @@ extern "C"
     void printFechaC(char *buff, uint16_t longBuff);
     void actualizaAmanAnoch(void);
     void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
+    void addDsC(int16_t dsAdd);
 }
 
 
@@ -209,6 +210,33 @@ void calendar::rtcSetFecha(struct tm *fecha, uint16_t ds)
     //fecha::actualizaCuandoPuedas();
 }
 
+
+// anade ds a RTC. No llamar a la medianoche
+void calendar::addDs(int16_t dsAdd)  {
+  struct tm tim;
+  uint16_t ds;
+  uint32_t dsTotal;
+  // lee la hora
+  rtcGetTM(&RTCD1, &tim, &ds);
+  // si no hay que hacer nada, vuelve
+  if (dsAdd==0 || dsAdd>600 || dsAdd<-600)
+    return;
+  // estaba ya actualizada?
+  if (tim.tm_mday == mdayActualizada)
+      return;
+  dsTotal = 36000L*tim.tm_hour + 600L*tim.tm_min + 10L*tim.tm_sec + ds + dsAdd;
+  // actualizo hora
+  tim.tm_hour = dsTotal/36000L;
+  dsTotal = dsTotal - tim.tm_hour*36000L;
+  tim.tm_min = dsTotal/600L;
+  dsTotal = dsTotal - tim.tm_min*600L;
+  tim.tm_sec = dsTotal/10L;
+  ds = dsTotal - tim.tm_sec*10L;
+  // escribo nueva hora
+  rtcSetTM(&RTCD1, &tim, ds);
+  mdayActualizada = tim.tm_mday;
+}
+
 /*
  * ver https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF
  * Altura solar ajustada a 93 grados (en 96 es demasiado oscuro)
@@ -317,12 +345,21 @@ void calendar::printHoras(char *buff, uint16_t longBuff)
     chsnprintf(buff,longBuff,"%d:%02d-%d:%02d",hAma,minAma,hNoche,minNoche);
 }
 
+
 void calendar::printFecha(char *buff, uint16_t longBuff)
 {
     struct tm tim;
     calendar::init();
     calendar::getFecha(&tim);
     chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",tim.tm_mday,tim.tm_mon+1,tim.tm_year-100,tim.tm_hour,tim.tm_min,tim.tm_sec);
+}
+
+
+void calendar::vuelcaFecha(void)
+{
+  char buff[80];
+  printFecha(buff,sizeof(buff));
+  printSerialCPP(buff);
 }
 
 
@@ -427,6 +464,11 @@ void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
       else
           *estDes = 0;
     }
+}
+
+void addDsC(int16_t dsAdd)
+{
+  calendar::addDs(dsAdd);
 }
 
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change)

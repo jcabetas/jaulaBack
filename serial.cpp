@@ -22,7 +22,7 @@ extern "C" {
     void initSerial(void);
     void closeSerial(void);
     void opciones(void);
-    void printSerial(char *msg);
+    void printSerial(const char *msg);
 }
 
 void ajustaP(uint16_t porcP);
@@ -35,28 +35,36 @@ extern int16_t addAmanecer;
 extern int16_t addAtardecer;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern uint16_t margenAdaptacionInicial, margenAdaptacion;
+extern int16_t dsAddPordia;
 
 extern uint16_t pObjetivo;
 extern uint16_t hayTension;
+uint8_t puertoAbierto = 0;
 
 const char *estPuertaStr[] = {"cerrada", "abierta","abierta de noche","abierta adaptando gatos"};
 static const SerialConfig ser_cfg = {115200, 0, 0, 0, };
 
 void initSerial(void) {
+    if (puertoAbierto==1)
+        return;
     palClearPad(GPIOA, GPIOA_TX2);
     palSetPad(GPIOA, GPIOA_RX2);
     palSetPadMode(GPIOA, GPIOA_RX2, PAL_MODE_ALTERNATE(7));
     palSetPadMode(GPIOA, GPIOA_TX2, PAL_MODE_ALTERNATE(7));
     sdStart(&SD2, &ser_cfg);
+    puertoAbierto = 1;
 }
 
 void closeSerial(void) {
+    if (puertoAbierto==0)
+        return;
     palSetPadMode(GPIOA, GPIOA_RX2,PAL_MODE_INPUT_ANALOG );
     palSetPadMode(GPIOA, GPIOA_TX2,PAL_MODE_INPUT_ANALOG );
     sdStop(&SD2);
+    puertoAbierto = 0;
 }
 
-void printSerial(char *msg)
+void printSerial(const char *msg)
 {
     initSerial();
     chprintf((BaseSequentialStream *)&SD2,msg);
@@ -64,7 +72,7 @@ void printSerial(char *msg)
     closeSerial();
 }
 
-void printSerialCPP(char *msg)
+void printSerialCPP(const char *msg)
 {
   printSerial(msg);
 }
@@ -128,7 +136,7 @@ void ajustaAddMinutos(void)
             return;
         if (result==0 && opcion==1)
         {
-            addAmanecer = result;
+            addMin = addAmanecer;
             result = preguntaNumero((BaseChannel *)&SD2, "Minutos adicionales al amanecer", &addMin, -300, 300);
             if (result == 0)
             {
@@ -138,7 +146,7 @@ void ajustaAddMinutos(void)
         }
         if (result==0 && opcion==2)
         {
-            addAtardecer = result;
+            addMin = addAtardecer;
             result = preguntaNumero((BaseChannel *)&SD2, "Minutos adicionales al atardecer", &addMin, -300, 300);
             if (result == 0)
             {
@@ -178,6 +186,42 @@ void ajustaHora(void)
     chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
 }
 
+void ajustaDsAdd(void)
+{
+    int16_t result;
+    int16_t opcion;
+    int16_t dsAdd;
+    char buff[80];
+    while (1==1)
+    {
+        chprintf((BaseSequentialStream *)&SD2,"Decimas de segundo dia adicionales: %d\n\r",dsAddPordia);
+        chprintf((BaseSequentialStream *)&SD2,"1 Nuevo valor\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"2 Aplica correccion ahora\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"3 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
+        chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        if (result==2 || (result==0 && opcion==3))
+            return;
+        if (result==0 && opcion==1)
+        {
+            dsAdd = dsAddPordia;
+            result = preguntaNumero((BaseChannel *)&SD2, "Decimas de segundo adicionales/dia", &dsAdd, -600, 600);
+            if (result == 0)
+            {
+                dsAddPordia = dsAdd;
+                escribeVariables();
+            }
+        }
+        if (result==0 && opcion==2)
+        {
+            calendar::printFecha(buff,sizeof(buff));
+            chprintf((BaseSequentialStream *)&SD2,"Fecha UTC antes cambio: %s\n\r",buff);
+            calendar::addDs(dsAddPordia);
+            calendar::printFecha(buff,sizeof(buff));
+            chprintf((BaseSequentialStream *)&SD2,"Fecha UTC despues del cambio: %s\n\r",buff);
+        }
+    }
+}
 
 
 void opciones(void)
@@ -204,13 +248,16 @@ void opciones(void)
         chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d\n\r",secActual, sec2change, estDes);
         chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d\n\r",addAmanecer, addAtardecer);
         chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaStr[autoPuerta]);
+        chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia\n\r\n\r",dsAddPordia);
+
         chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");
         chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
         chprintf((BaseSequentialStream *)&SD2,"3 Minutos adicionales\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"4 Salir\n\r");
-        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 4);
+        chprintf((BaseSequentialStream *)&SD2,"4 Correccion de hora\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"5 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 5);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        if (result==2 || (result==0 && opcion==4))
+        if (result==2 || (result==0 && opcion==5))
         {
             closeSerial();
             return;
@@ -221,5 +268,7 @@ void opciones(void)
             ajustaPuerta();
         if (result==0 && opcion==3)
             ajustaAddMinutos();
+        if (result==0 && opcion==4)
+            ajustaDsAdd();
     }
 }

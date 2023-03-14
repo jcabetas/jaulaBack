@@ -70,6 +70,7 @@ void leeVariables(void)
   addAtardecer = W25Q16_read_i16(0, POS_ADDATARDECER);
   autoPuerta = W25Q16_read_u16(0, POS_AUTOPUERTA);
   margenAdaptacionInicial = W25Q16_read_u16(0, POS_MARGENADAPT);
+  dsAddPordia = W25Q16_read_i16(0, POS_DSADDPORDIA);
   sleepW25q16();
 }
 
@@ -81,6 +82,7 @@ void escribeVariables(void)
   W25Q16_write_i16(0, POS_ADDATARDECER, addAtardecer);
   W25Q16_write_u16(0, POS_AUTOPUERTA, autoPuerta);
   W25Q16_write_u16(0, POS_MARGENADAPT, margenAdaptacionInicial);
+  W25Q16_write_i16(0, POS_DSADDPORDIA, dsAddPordia);
   W25Q16_write_u16(0, 0, 0x7851);
   sleepW25q16();
   leeVariables();

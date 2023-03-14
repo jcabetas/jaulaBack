@@ -35,13 +35,14 @@ int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 //void sleepW25q16(void);
 void leeVariablesC(void);
 void printFechaC(char *buff, uint16_t longBuff);
+void addDsC(int16_t dsAdd);
 void printSerial(char *msg);
 void opciones(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
 /*
- * Alimentador de gatos
+ * Alimentador de gatosvoid addDsC(int16_t dsAdd)
  *
  * BUCLE
  * Si es el primer arranque, pon RTC en hora con GPS
@@ -74,6 +75,7 @@ extern uint8_t GL_Flag_External_WakeUp;
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
+extern int16_t dsAddPordia;
 
 
 void parpadear(uint8_t numVeces,uint16_t ms)
@@ -117,6 +119,7 @@ int main(void) {
       printSerial(buffer);
       ports_set_lowpower();
       stop(sec2change);
+      addDsC(dsAddPordia);
       if (GL_Flag_External_WakeUp==0)
       {
           parpadear(1,250);
