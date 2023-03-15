@@ -36,12 +36,15 @@ extern int16_t addAtardecer;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern uint16_t margenAdaptacionInicial, margenAdaptacion;
 extern int16_t dsAddPordia;
+extern uint16_t posAbierto;
+extern uint16_t posCerrado;
 
 extern uint16_t pObjetivo;
 extern uint16_t hayTension;
 uint8_t puertoAbierto = 0;
 
-const char *estPuertaStr[] = {"cerrada", "abierta","abierta de noche","abierta adaptando gatos"};
+const char *estPuertaAutoStr[] = {"cerrada", "abierta","abierta de noche","abierta adaptando gatos"};
+const char *estPuertaStr[] = {"cerrada", "abierta"};
 static const SerialConfig ser_cfg = {115200, 0, 0, 0, };
 
 void initSerial(void) {
@@ -83,7 +86,7 @@ void ajustaPuerta(void)
     int16_t opcion;
     uint8_t estDes;
     uint16_t sec2change;
-    chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaStr[autoPuerta]);
+    chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaAutoStr[autoPuerta]);
     uint16_t autoPuertaOld = autoPuerta;
     while (1==1)
     {
@@ -118,6 +121,51 @@ void ajustaPuerta(void)
     }
 }
 
+
+void ajustaPosiciones(void)
+{
+    int16_t result;
+    int16_t opcion;
+    int16_t posicion;
+    uint8_t estDes;
+    uint16_t sec2change;
+    while (1==1)
+    {
+        chprintf((BaseSequentialStream *)&SD2,"Posicion servo abierto: %d, cerrado: %d\n\r",posAbierto, posCerrado);
+        chprintf((BaseSequentialStream *)&SD2,"1 Posicion abierto\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"2 Posicion cerrado\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"3 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
+        chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        if (result==2 || (result==0 && opcion==3))
+            return;
+        if (result==0 && opcion==1)
+        {
+            posicion = posAbierto;
+            result = preguntaNumero((BaseChannel *)&SD2, "Posicion abierto", &posicion, 0, 100);
+            if (result == 0)
+            {
+                posAbierto = posicion;
+                escribeVariables();
+            }
+        }
+        if (result==0 && opcion==2)
+        {
+            posicion = posCerrado;
+            result = preguntaNumero((BaseChannel *)&SD2, "Posicion cerrado", &posicion, 0, 100);
+            if (result == 0)
+            {
+                posCerrado = posicion;
+                escribeVariables();
+            }
+        }
+        calendar::estadoDeseadoPuerta(&estDes, &sec2change);
+        if (estDes == 1)
+            mueveServoPos(posAbierto);
+        else
+            mueveServoPos(posCerrado);
+    }
+}
 
 void ajustaAddMinutos(void)
 {
@@ -245,19 +293,21 @@ void opciones(void)
         calendar::printHoras(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Hora amanecer y atardecer UTC: %s\n\r",buff);
         chprintf((BaseSequentialStream *)&SD2,"sec. amanecer:%d. anochecer:%d\n\r",secAmanecer, secAnochecer);
-        chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d\n\r",secActual, sec2change, estDes);
+        chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d:%s\n\r",secActual, sec2change, estDes,estPuertaStr[estDes]);
         chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d\n\r",addAmanecer, addAtardecer);
-        chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaStr[autoPuerta]);
-        chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia\n\r\n\r",dsAddPordia);
+        chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaAutoStr[autoPuerta]);
+        chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia\n\r",dsAddPordia);
+        chprintf((BaseSequentialStream *)&SD2,"Posicion servo abierto: %d, cerrado: %d\n\r\n\r",posAbierto, posCerrado);
 
         chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");
         chprintf((BaseSequentialStream *)&SD2,"2 Automatizacion puerta\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"3 Minutos adicionales\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"4 Correccion de hora\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"5 Salir\n\r");
-        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 5);
+        chprintf((BaseSequentialStream *)&SD2,"3 Posiciones de servos\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"4 Minutos adicionales\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"5 Correccion de hora\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"6 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 6);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        if (result==2 || (result==0 && opcion==5))
+        if (result==2 || (result==0 && opcion==6))
         {
             closeSerial();
             return;
@@ -267,8 +317,10 @@ void opciones(void)
         if (result==0 && opcion==2)
             ajustaPuerta();
         if (result==0 && opcion==3)
-            ajustaAddMinutos();
+            ajustaPosiciones();
         if (result==0 && opcion==4)
+            ajustaAddMinutos();
+        if (result==0 && opcion==5)
             ajustaDsAdd();
     }
 }

@@ -76,6 +76,8 @@ volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern int16_t dsAddPordia;
+extern uint16_t posAbierto;
+extern uint16_t posCerrado;
 
 
 void parpadear(uint8_t numVeces,uint16_t ms)
@@ -111,9 +113,9 @@ int main(void) {
       chsnprintf(buffer,sizeof(buffer),"Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",autoPuerta, estDes,sec2change);
       printSerial(buffer);
       if (estDes == 1)
-          mueveServoPosC(0);
+          mueveServoPosC(posAbierto);
       else
-          mueveServoPosC(100);
+          mueveServoPosC(posCerrado);
       ports_set_lowpower();
       chsnprintf(buffer,sizeof(buffer),"A dormir %d s\n\r",sec2change);
       printSerial(buffer);

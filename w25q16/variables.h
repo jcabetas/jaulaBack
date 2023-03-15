@@ -13,6 +13,9 @@
 #define POS_AUTOPUERTA      6
 #define POS_MARGENADAPT     8
 #define POS_DSADDPORDIA    10
+#define POS_POSABIERTO     12
+#define POS_POSCERRADO     14
+
 
 void initW25q16(void);
 void sleepW25q16(void);
