@@ -29,7 +29,7 @@ void ajustaP(uint16_t porcP);
 uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t sec);
 void diSecAmanecerAnochecer(uint16_t *secActual, uint16_t *secAmanecer, uint16_t *secAnochecer);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
-void mueveServoPos(uint8_t porcPosicion);
+void mueveServoPos(uint16_t porcPosicion);
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -113,9 +113,9 @@ void ajustaPuerta(void)
           escribeVariables();
           calendar::estadoDeseadoPuerta(&estDes, &sec2change);
           if (estDes == 1)
-              mueveServoPos(0);
+              mueveServoPos(posAbierto);
           else
-              mueveServoPos(100);
+              mueveServoPos(posCerrado);
           break;
         }
     }

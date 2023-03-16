@@ -29,7 +29,7 @@ void initSerial(void);
 void closeSerial(void);
 void leeGPS(void);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
-void mueveServoPosC(uint8_t porcPosicion);
+void mueveServoPosC(uint16_t porcPosicion);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 //void opciones(void);
 //void sleepW25q16(void);
@@ -131,46 +131,9 @@ int main(void) {
           opciones();
   }
 
-  ports_set_lowpower();
-
   leeGPS(); // leer GPS
   while (!enHora) // espero a que termine
   {
       chThdSleepMilliseconds(200);
-  }
-  // vienes de despertar de un standby?
-//  if ((PWR->CSR) && PWR_CSR_SBF)
-//  {
-//      parpadear(3,1000);
-//  }
-//  else
-//  {
-//      parpadear(4,1000);
-//      leeGPS(); // lanza proceso para leer GPS
-//      while (!enHora) // espero a que termine
-//      {
-//          chThdSleepMilliseconds(200);
-//      }
-//  }
-  while (1)
-  {
-//      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-//      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
-//      mueveServoAncho(3000);            // abre tapa
-//      chThdSleepMilliseconds(2000);
-//      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-//      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
-      parpadear(2,250);
-      estadoDeseadoPuerta(&estDes, &sec2change);
-      palClearPad(GPIOB, GPIOB_ONSERVO); // da tension al servo
-      if (estDes==0)
-          mueveServoPosC(0);
-      else
-          mueveServoPosC(100);
-      // dale tiempo para posicionarse
-      chThdSleepMilliseconds(2000);
-      palSetPad(GPIOB, GPIOB_ONSERVO); // quita tension al servo
-      estadoDeseadoPuerta(&estDes, &sec2change);
-      stop(sec2change);
   }
 }

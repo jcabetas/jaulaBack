@@ -12,7 +12,7 @@
 #include "alimCalle.h"
 
 extern "C" {
-    void mueveServoPosC(uint8_t porcPosicion);
+    void mueveServoPosC(uint16_t porcPosicion);
 }
 
 
@@ -65,7 +65,7 @@ void mueveServoAncho(uint16_t ancho)
   closeServo();
 }
 
-void mueveServoPos(uint8_t porcPosicion)
+void mueveServoPos(uint16_t porcPosicion)
 {
   uint16_t ancho;
   if (porcPosicion>100) porcPosicion=100;
@@ -73,7 +73,7 @@ void mueveServoPos(uint8_t porcPosicion)
   mueveServoAncho(ancho);
 }
 
-void mueveServoPosC(uint8_t porcPosicion)
+void mueveServoPosC(uint16_t porcPosicion)
 {
     mueveServoPos(porcPosicion);
 }
