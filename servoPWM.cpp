@@ -13,8 +13,12 @@
 
 extern "C" {
     void mueveServoPosC(uint16_t porcPosicion);
+    void cierraPuertaC(void);
+    void abrePuertaC(void);
 }
 
+extern uint16_t posAbierto;
+extern uint16_t posCerrado;
 
 static PWMConfig pwmcfg = {
   3125000, /* 48 MHz PWM clock frequency */
@@ -51,30 +55,42 @@ void closeServo(void)
     pwmStop(&PWMD4);
 }
 
-void mueveServoAncho(uint16_t ancho)
+void mueveServoAncho(uint16_t ancho, uint16_t ms)
 {
   initServo();
   palClearPad(GPIOB, GPIOB_ONSERVO);
   // minimo 2980, maximo 6068, medio 4529
-  if (ancho<2980) ancho=2980;
-  if (ancho>6068) ancho=6068;
+  if (ancho<2700) ancho=2700;
+  if (ancho>6500) ancho=6500;
   if (PWMD4.state==PWM_STOP)
       pwmStart(&PWMD4, &pwmcfg);
   pwmEnableChannel(&PWMD4, 2, ancho);
-  chThdSleepMilliseconds(2000);
+  chThdSleepMilliseconds(ms);
   closeServo();
 }
 
-void mueveServoPos(uint16_t porcPosicion)
+void mueveServoPos(uint16_t porcPosicion, uint16_t ms)
 {
   uint16_t ancho;
   if (porcPosicion>100) porcPosicion=100;
-  ancho = (uint16_t) (2980.0f+3088.0f*porcPosicion/100.0f);
-  mueveServoAncho(ancho);
+  ancho = (uint16_t) (2700.0f+3800.0f*porcPosicion/100.0f);
+  mueveServoAncho(ancho, ms);
 }
 
 void mueveServoPosC(uint16_t porcPosicion)
 {
-    mueveServoPos(porcPosicion);
+    mueveServoPos(porcPosicion,1500);
 }
 
+void cierraPuertaC(void)
+{
+    uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
+    mueveServoPos(posIntermedia,1000);
+    chThdSleepMilliseconds(1500);
+    mueveServoPos(posCerrado,1500);
+}
+
+void abrePuertaC(void)
+{
+    mueveServoPos(posAbierto,1500);
+}

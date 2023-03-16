@@ -60,8 +60,8 @@ void reseteaEEprom(void)
   W25Q16_write_u16(0, POS_AUTOPUERTA, 2);
   W25Q16_write_u16(0, POS_MARGENADAPT, 0);
   W25Q16_write_i16(0, POS_DSADDPORDIA, 0);
-  W25Q16_write_u16(0, POS_POSABIERTO, 0);
-  W25Q16_write_u16(0, POS_POSCERRADO, 100);
+  W25Q16_write_u16(0, POS_POSABIERTO, 95);
+  W25Q16_write_u16(0, POS_POSCERRADO, 0);
   W25Q16_write_u16(0, 0, 0x7851);
 }
 

@@ -29,7 +29,8 @@ void initSerial(void);
 void closeSerial(void);
 void leeGPS(void);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
-void mueveServoPosC(uint16_t porcPosicion);
+void abrePuertaC(void);
+void cierraPuertaC(void);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
 //void opciones(void);
 //void sleepW25q16(void);
@@ -70,7 +71,10 @@ extern uint8_t GL_Flag_External_WakeUp;
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
  */
 
-// Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet). Alimentando en 3.3V, baja a 22 uA
+// Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet).
+// Alimentando en 3.3V sin placa PCB, 25 uA
+// Alimentando en 5V sin PCB: 23 uA (en la anterior no quite regulador)
+// Alimentando en 5V con PCB: 25 uA ¿? el pullup de 50k del mosfet debería consumir unos 12 uA
 
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
@@ -113,10 +117,9 @@ int main(void) {
       chsnprintf(buffer,sizeof(buffer),"Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",autoPuerta, estDes,sec2change);
       printSerial(buffer);
       if (estDes == 1)
-          mueveServoPosC(posAbierto);
+          abrePuertaC();
       else
-          mueveServoPosC(posCerrado);
-      ports_set_lowpower();
+          cierraPuertaC();
       chsnprintf(buffer,sizeof(buffer),"A dormir %d s\n\r",sec2change);
       printSerial(buffer);
       ports_set_lowpower();
@@ -130,10 +133,9 @@ int main(void) {
       else
           opciones();
   }
-
-  leeGPS(); // leer GPS
-  while (!enHora) // espero a que termine
-  {
-      chThdSleepMilliseconds(200);
-  }
+//  leeGPS(); // leer GPS
+//  while (!enHora) // espero a que termine
+//  {
+//      chThdSleepMilliseconds(200);
+//  }
 }
