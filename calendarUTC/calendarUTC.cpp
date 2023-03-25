@@ -18,6 +18,8 @@ void printSerialCPP(const char *msg);
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
+uint32_t secAdaptacion;
+uint16_t diaAdaptado;
 
 extern struct queu_t colaMsgTxCan;
 extern event_source_t sendMsgCAN_source;
@@ -40,6 +42,7 @@ extern "C"
     void actualizaAmanAnoch(void);
     void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
     void addDsC(int16_t dsAdd);
+    void iniciaSecAdaptacionC(void);
 }
 
 
@@ -434,14 +437,35 @@ void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer
     *secAnochecer = 60*minAnochecer;
 }
 
+void calendar::iniciaSecAdaptacion(void)
+{
+    uint32_t secActual, secAmanecer, secAnochecer;
+    calendar::init();
+    calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
+    secAdaptacion = (secAnochecer +60*addAmanecer - secAmanecer - 60*addAtardecer)/2 - 1800;
+    diaAdaptado = fechaNow.tm_yday;
+}
+
+void iniciaSecAdaptacionC(void)
+{
+    calendar::iniciaSecAdaptacion();
+}
+
 void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
 {
     uint32_t secActual, secAmanecer, secAnochecer, secsProxCambio;
     calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
-    if (secActual<secAmanecer+ 60*addAmanecer)  // antes de amanecer
-        secsProxCambio = secAmanecer + 60*addAmanecer - secActual + 45;
-    else if (secActual<secAnochecer + 60*addAtardecer) // de dia
-        secsProxCambio = secAnochecer + 60*addAtardecer - secActual + 45;
+    if (diaAdaptado != fechaNow.tm_yday)
+    {
+        secAdaptacion -= 1800;
+        if (secAdaptacion < 1800)
+            secAdaptacion = 0;
+        diaAdaptado = fechaNow.tm_yday;
+    }
+    if (secActual<secAmanecer + 60*addAmanecer + secAdaptacion)  // antes de amanecer
+        secsProxCambio = secAmanecer + 60*addAmanecer +secAdaptacion - secActual + 45;
+    else if (secActual<secAnochecer + 60*addAtardecer - secAdaptacion) // de dia
+        secsProxCambio = secAnochecer + 60*addAtardecer -secAdaptacion - secActual + 45;
     else // ya de noche, prox cambio a las 1am del dia siguiente
         secsProxCambio = (uint16_t)(86400L-secActual + 3600L + 45L);
     *sec2change = secsProxCambio;
@@ -459,10 +483,10 @@ void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change)
     }
     else if (autoPuerta==3)
     {
-      if (secActual>=secAmanecer && secActual<=secAnochecer)
-          *estDes = 1;
-      else
-          *estDes = 0;
+        if (secActual>=secAmanecer+60*addAmanecer+secAdaptacion && secActual<=secAnochecer+60*addAtardecer-secAdaptacion)
+            *estDes = 0;
+        else
+            *estDes = 1;
     }
 }
 

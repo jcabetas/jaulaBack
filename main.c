@@ -39,6 +39,7 @@ void printFechaC(char *buff, uint16_t longBuff);
 void addDsC(int16_t dsAdd);
 void printSerial(char *msg);
 void opciones(void);
+void iniciaSecAdaptacionC(void);
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
@@ -49,7 +50,7 @@ extern uint8_t GL_Flag_External_WakeUp;
  * Si es el primer arranque, pon RTC en hora con GPS
  * Para cualquier arranque
  * - leer variables
- * - lee la hora del RTC#include "chprintf.h"
+ * - lee la hora del RTC
  * - bucle:
  *      - Situar la puerta con la logica definida
  *      - Analizar segundos que faltan para cambiar de estado
@@ -82,6 +83,7 @@ extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConM
 extern int16_t dsAddPordia;
 extern uint16_t posAbierto;
 extern uint16_t posCerrado;
+extern uint32_t secAdaptacion;
 
 
 void parpadear(uint8_t numVeces,uint16_t ms)
@@ -106,6 +108,8 @@ int main(void) {
   chSysInit();
   initSerial();
   parpadear(2,250);
+  leeVariablesC();
+  iniciaSecAdaptacionC();
   printSerial("Inicializado\n\r");
   while (1==1)
   {

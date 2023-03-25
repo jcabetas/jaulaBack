@@ -34,7 +34,8 @@ void mueveServoPos(uint16_t porcPosicion, uint16_t ms);
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
 extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
-extern uint16_t margenAdaptacionInicial, margenAdaptacion;
+extern uint32_t secAdaptacion;
+extern uint16_t diaAdaptado;
 extern int16_t dsAddPordia;
 extern uint16_t posAbierto;
 extern uint16_t posCerrado;
@@ -94,22 +95,16 @@ void ajustaPuerta(void)
         chprintf((BaseSequentialStream *)&SD2,"0 Cerrada siempre (OJO)\n\r");
         chprintf((BaseSequentialStream *)&SD2,"1 Abierta siempre\n\r");
         chprintf((BaseSequentialStream *)&SD2,"2 Abrir y cerrar con el sol\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"3 Abierta y cada dia 1 hora menos\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"3 Idem con adaptacion\n\r");
         chprintf((BaseSequentialStream *)&SD2,"4 Salir\n\r");
         result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 0, 4);
         if (result==2 || (result==0 && opcion==4))
-        {
-            closeSerial();
             return;
-        }
         if (result==0 && opcion!=autoPuertaOld && opcion>=0 && opcion<=3)
         {
+          if (autoPuerta!=3 && opcion==3) // si cambio a adaptacion, reinicializa
+            calendar::iniciaSecAdaptacion();
           autoPuerta = opcion;
-          if (autoPuerta==3)
-          {
-              margenAdaptacion = margenAdaptacionInicial;
-              chprintf((BaseSequentialStream *)&SD2,"=> margen inicial establecido a %d minutos\n\r",margenAdaptacion);
-          }
           escribeVariables();
           calendar::estadoDeseadoPuerta(&estDes, &sec2change);
           if (estDes == 1)
@@ -190,6 +185,7 @@ void ajustaAddMinutos(void)
             {
                 addAmanecer = addMin;
                 escribeVariables();
+                calendar::iniciaSecAdaptacion();
             }
         }
         if (result==0 && opcion==2)
@@ -200,6 +196,7 @@ void ajustaAddMinutos(void)
             {
                 addAtardecer = addMin;
                 escribeVariables();
+                calendar::iniciaSecAdaptacion();
             }
         }
     }
@@ -230,6 +227,7 @@ void ajustaHora(void)
     if (result==2)
         return;
     ajustaHoraDetallada(ano, mes, dia, hora, min, sec);
+    calendar::iniciaSecAdaptacion();
     calendar::printFecha(buff,sizeof(buff));
     chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
 }
@@ -294,7 +292,7 @@ void opciones(void)
         chprintf((BaseSequentialStream *)&SD2,"Hora amanecer y atardecer UTC: %s\n\r",buff);
         chprintf((BaseSequentialStream *)&SD2,"sec. amanecer:%d. anochecer:%d\n\r",secAmanecer, secAnochecer);
         chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d:%s\n\r",secActual, sec2change, estDes,estPuertaStr[estDes]);
-        chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d\n\r",addAmanecer, addAtardecer);
+        chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d  secAdaptacion:%d (diaAdapt:%d)\n\r",addAmanecer, addAtardecer, secAdaptacion, diaAdaptado);
         chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaAutoStr[autoPuerta]);
         chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia\n\r",dsAddPordia);
         chprintf((BaseSequentialStream *)&SD2,"Posicion servo abierto: %d, cerrado: %d\n\r\n\r",posAbierto, posCerrado);

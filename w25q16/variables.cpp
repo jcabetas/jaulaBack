@@ -27,7 +27,6 @@ using namespace chibios_rt;
 int16_t addAmanecer;
 int16_t addAtardecer;
 uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
-uint16_t margenAdaptacionInicial, margenAdaptacion;
 int16_t dsAddPordia;
 uint16_t posAbierto;
 uint16_t posCerrado;
@@ -58,7 +57,6 @@ void reseteaEEprom(void)
   W25Q16_write_i16(0, POS_ADDAMANECER, 30);
   W25Q16_write_i16(0, POS_ADDATARDECER, 30);
   W25Q16_write_u16(0, POS_AUTOPUERTA, 2);
-  W25Q16_write_u16(0, POS_MARGENADAPT, 0);
   W25Q16_write_i16(0, POS_DSADDPORDIA, 0);
   W25Q16_write_u16(0, POS_POSABIERTO, 95);
   W25Q16_write_u16(0, POS_POSCERRADO, 0);
@@ -75,7 +73,6 @@ void leeVariables(void)
   addAmanecer = W25Q16_read_i16(0, POS_ADDAMANECER);
   addAtardecer = W25Q16_read_i16(0, POS_ADDATARDECER);
   autoPuerta = W25Q16_read_u16(0, POS_AUTOPUERTA);
-  margenAdaptacionInicial = W25Q16_read_u16(0, POS_MARGENADAPT);
   dsAddPordia = W25Q16_read_i16(0, POS_DSADDPORDIA);
   posAbierto = W25Q16_read_u16(0, POS_POSABIERTO);
   posCerrado = W25Q16_read_u16(0, POS_POSCERRADO);
@@ -89,7 +86,6 @@ void escribeVariables(void)
   W25Q16_write_i16(0, POS_ADDAMANECER, addAmanecer);
   W25Q16_write_i16(0, POS_ADDATARDECER, addAtardecer);
   W25Q16_write_u16(0, POS_AUTOPUERTA, autoPuerta);
-  W25Q16_write_u16(0, POS_MARGENADAPT, margenAdaptacionInicial);
   W25Q16_write_i16(0, POS_DSADDPORDIA, dsAddPordia);
   W25Q16_write_u16(0, POS_POSABIERTO, posAbierto);
   W25Q16_write_u16(0, POS_POSCERRADO, posCerrado);

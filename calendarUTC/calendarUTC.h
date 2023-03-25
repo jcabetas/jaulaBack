@@ -42,6 +42,7 @@ public:
     static void getFechaHora(struct fechaHora *fechaHora);
     static time_t getSecUnix(void);
     static time_t getSecUnix(struct tm *fecha);
+    static void iniciaSecAdaptacion(void);
     static enum getPeriodoTarifa getPeriodoTarifa(void);
     static uint8_t getDOW(void);
     static uint32_t dsDiff(struct fechaHora *fechHoraOld);
