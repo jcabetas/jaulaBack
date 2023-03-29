@@ -86,7 +86,7 @@ void ajustaPuerta(void)
     int16_t result;
     int16_t opcion;
     uint8_t estDes;
-    uint16_t sec2change;
+    uint32_t sec2change;
     chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaAutoStr[autoPuerta]);
     uint16_t autoPuertaOld = autoPuerta;
     while (1==1)
@@ -103,8 +103,10 @@ void ajustaPuerta(void)
         if (result==0 && opcion!=autoPuertaOld && opcion>=0 && opcion<=3)
         {
           if (autoPuerta!=3 && opcion==3) // si cambio a adaptacion, reinicializa
-            calendar::iniciaSecAdaptacion();
+              calendar::iniciaSecAdaptacion();
           autoPuerta = opcion;
+          if (autoPuerta!=3)
+            secAdaptacion = 0;
           escribeVariables();
           calendar::estadoDeseadoPuerta(&estDes, &sec2change);
           if (estDes == 1)
@@ -123,7 +125,7 @@ void ajustaPosiciones(void)
     int16_t opcion;
     int16_t posicion;
     uint8_t estDes;
-    uint16_t sec2change;
+    uint32_t sec2change;
     while (1==1)
     {
         chprintf((BaseSequentialStream *)&SD2,"Posicion servo abierto: %d, cerrado: %d\n\r",posAbierto, posCerrado);
@@ -275,7 +277,7 @@ void opciones(void)
     int16_t result;
     int16_t opcion;
     uint8_t estDes;
-    uint16_t sec2change;
+    uint32_t sec2change;
     uint32_t secActual, secAmanecer, secAnochecer;
 
     char buff[50];

@@ -65,7 +65,7 @@ void ports_set_lowpower(void)
  */
 // funciona con consumo de 1.9mA (no cambia al quitar ADC ni puesrto serie)
 
-uint8_t sleep_for_x_sec(uint16_t nb_sec)
+uint8_t sleep_for_x_sec(uint32_t nb_sec)
 {
     static RTCWakeup wakeupspec;
     static uint8_t wakeup_source;
@@ -77,12 +77,24 @@ uint8_t sleep_for_x_sec(uint16_t nb_sec)
     palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
     palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
+    // desconozco si se comportara bien en el entorno de 0x10000
+    if (nb_sec>0xFFFF && nb_sec<0x10005)
+        nb_sec = 0xFFFF;
     // prepara despertar por timer
-    wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
-    wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    if (nb_sec<=0x10000)
+    {
+        wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4    // bits 16-18 = WUCKSel : Select 1 Hz clk
+        wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+    }
+    else
+    {
+        //WUT = Wakeup unit counter value. WUT = (0x0000 to 0xFFFF) + 0x10000 added when WUCKSEL[2:1 = 11].
+        wakeupspec.wutr = ( (uint32_t)6 ) << 16;              // bits 16-18 = WUCKSel : Select 1 Hz clk
+        wakeupspec.wutr |= (nb_sec - 0x10000 - 1);             // bits 0-15  = WUT : Period = x+1 sec
+    }
     rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
 
-    //ports_set_lowpower();                                 // Set ports for low power
+    //  ports_set_lowpower();                                 // Set ports for low power
     //  palSetLineMode(LINE_GPIOA_SWDIO, PAL_MODE_INPUT_ANALOG);
     //  palSetLineMode(LINE_GPIOA_SWCLK, PAL_MODE_INPUT_ANALOG);
 

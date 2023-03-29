@@ -28,7 +28,7 @@ void initSensores(void);
 void initSerial(void);
 void closeSerial(void);
 void leeGPS(void);
-void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
+void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
 void abrePuertaC(void);
 void cierraPuertaC(void);
 int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
@@ -101,7 +101,7 @@ void parpadear(uint8_t numVeces,uint16_t ms)
 
 int main(void) {
     uint8_t estDes;
-    uint16_t sec2change;
+    uint32_t sec2change;
     char buffer[90], buff[50];
 
   halInit();

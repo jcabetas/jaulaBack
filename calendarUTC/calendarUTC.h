@@ -55,7 +55,7 @@ public:
     static void printFecha(char *buff, uint16_t longBuff);
     static void vuelcaFecha(void);
     static void diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer, uint32_t *secAnochecer);
-    static void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change);
+    static void estadoDeseadoPuerta(uint8_t *estDes, uint32_t *sec2change);
     static void updateUnixTime(void);
     static void enviaFechayHoraPorCAN(struct tm *fechaLocal, uint16_t ds);
     static void cambiaFecha(uint16_t *anyo, uint8_t *mes, uint8_t *dia, uint8_t *hora, uint8_t *min, uint8_t *seg, uint8_t *ds);
