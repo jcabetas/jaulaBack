@@ -14,6 +14,7 @@
 #define POS_DSADDPORDIA     8
 #define POS_POSABIERTO     10
 #define POS_POSCERRADO     12
+#define POS_INCR_AD_PORMIL 14
 
 
 void initW25q16(void);

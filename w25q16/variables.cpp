@@ -18,10 +18,10 @@ using namespace chibios_rt;
     #define POS_ADDAMANECER     2
     #define POS_ADDATARDECER    4
     #define POS_AUTOPUERTA      6
-    #define POS_MARGENADAPT     8
-    #define POS_DSADDPORDIA    10
-    #define POS_POSABIERTO     12
-    #define POS_POSCERRADO     14
+    #define POS_DSADDPORDIA     8
+    #define POS_POSABIERTO     10
+    #define POS_POSCERRADO     12
+    #define POS_INCR_AD_PORMIL 14
  */
 
 int16_t addAmanecer;
@@ -30,6 +30,7 @@ uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 int16_t dsAddPordia;
 uint16_t posAbierto;
 uint16_t posCerrado;
+int16_t incAdPormil;
 
 extern "C" {
     void leeVariablesC(void);
@@ -60,6 +61,7 @@ void reseteaEEprom(void)
   W25Q16_write_i16(0, POS_DSADDPORDIA, 0);
   W25Q16_write_u16(0, POS_POSABIERTO, 95);
   W25Q16_write_u16(0, POS_POSCERRADO, 0);
+  W25Q16_write_i16(0, POS_INCR_AD_PORMIL,0);
   W25Q16_write_u16(0, 0, 0x7851);
 }
 
@@ -76,6 +78,7 @@ void leeVariables(void)
   dsAddPordia = W25Q16_read_i16(0, POS_DSADDPORDIA);
   posAbierto = W25Q16_read_u16(0, POS_POSABIERTO);
   posCerrado = W25Q16_read_u16(0, POS_POSCERRADO);
+  incAdPormil = W25Q16_read_i16(0, POS_INCR_AD_PORMIL);
   sleepW25q16();
 }
 
@@ -89,6 +92,7 @@ void escribeVariables(void)
   W25Q16_write_i16(0, POS_DSADDPORDIA, dsAddPordia);
   W25Q16_write_u16(0, POS_POSABIERTO, posAbierto);
   W25Q16_write_u16(0, POS_POSCERRADO, posCerrado);
+  W25Q16_write_i16(0, POS_INCR_AD_PORMIL, incAdPormil);
   W25Q16_write_u16(0, 0, 0x7851);
   sleepW25q16();
   leeVariables();

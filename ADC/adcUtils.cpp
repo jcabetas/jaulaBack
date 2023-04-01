@@ -19,16 +19,18 @@ float lipoVoltCharge[]={3.3f,  3.50f, 3.69f, 3.71f, 3.73f, 3.75f, 3.77f, 3.79f, 
 //                       55%    60%    65%    70%    75%    80%    85%    90%    95%    100%
 
 /*
- * La tension se lee en PA7 (ADC7), a traves de divisor con factor 0,69894
+ * La tension se lee en PB0 (ADC1-8), a traves de divisor 220/(91+220)=con factor 0,707395
  *   El fondo de escala es 4096 corresponde a 3.3 V
- *   Por tanto la tension es ADC*3.314/(0,69894*4096) = ADC*0,001157584
+ *   Por tanto la tension es ADC*3.3/(0,707395*4096) = ADC*0,00113891682
  */
 
 #define ADC_GRP1_NUM_CHANNELS   1
 #define ADC_GRP1_BUF_DEPTH      4
-
+void printSerialCPP(const char *msg);
 // Create buffer to store ADC results. This is
 // one-dimensional interleaved array
+
+extern int16_t incAdPormil;
 
 adcsample_t samples_buf[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH]; // results array
 
@@ -41,6 +43,7 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 4 samples of 1 channel, SW triggered.
+ * Channels:    B0 == AN8.
  * Channels:    B1 == AN9.
  */
 static const ADCConversionGroup adcgrpcfg1 = {
@@ -56,24 +59,38 @@ static const ADCConversionGroup adcgrpcfg1 = {
   0,                        /* LTR */
   0,                        /* SQR1 */
   0,  /* SQR2 */
-  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN9)
+  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN8)
 };
 
-
-
+extern int16_t incAdPormil;
 
 /* Lee tension */
 void leeTension(float *vBat)
 {
+    palSetPadMode(GPIOB, GPIOB_ONAD, PAL_MODE_OUTPUT_OPENDRAIN);
+    palClearPad(GPIOB, GPIOB_ONAD);
+    palSetPadMode(GPIOB, GPIOB_VBAT, PAL_MODE_INPUT_ANALOG); // B0 medida de bateria
+    chThdSleepMilliseconds(10);
+    // hay que leer dos veces, la primera tiene error importante
     adcStart(&ADCD1,NULL);
 	adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
+    adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
     adcStop(&ADCD1);
-	// promedia
-	adcsample_t media = 0;
-	for (uint8_t n=0;n<ADC_GRP1_BUF_DEPTH;n++)
-	    media += samples_buf[n];
-	media /= ADC_GRP1_BUF_DEPTH;
-	*vBat = media*0.001157584f;
+
+    *vBat = samples_buf[0]*0.00113891682f*(1.0f+incAdPormil/1000.0f);
+    palSetPad(GPIOB, GPIOB_ONAD);
+    chThdSleepMilliseconds(1);
+    palSetPadMode(GPIOB, GPIOB_ONAD,PAL_MODE_INPUT_ANALOG);
+}
+
+bool tensionCritica(void)
+{
+    float vBat;
+    leeTension(&vBat);
+    if (vBat<3.60f)
+        return true;
+    else
+        return false;
 }
 
 float hallaCapBat(float *vBat)
@@ -107,10 +124,5 @@ void pruebaADC(void)
     leeTension(&vBat);
     float porcBat = hallaCapBat(&vBat);
     chsnprintf(buff,sizeof(buff),"Vbat:%.3fV (%d%%)\r\n",vBat,(int16_t) porcBat);
+    printSerialCPP(buff);
 }
-
-void initAdc(void)
-{
-    palSetPadMode(GPIOB, GPIOB_VBAT, PAL_MODE_INPUT_ANALOG); // B1 medida de bateria
-}
-

@@ -30,6 +30,9 @@ uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora
 void diSecAmanecerAnochecer(uint16_t *secActual, uint16_t *secAmanecer, uint16_t *secAnochecer);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
 void mueveServoPos(uint16_t porcPosicion, uint16_t ms);
+void leeTension(float *vBat);
+bool tensionCritica(void);
+float hallaCapBat(float *vBat);
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -42,6 +45,7 @@ extern uint16_t posCerrado;
 
 extern uint16_t pObjetivo;
 extern uint16_t hayTension;
+extern int16_t incAdPormil;
 uint8_t puertoAbierto = 0;
 
 const char *estPuertaAutoStr[] = {"cerrada", "abierta","abierta de noche","abierta adaptando gatos"};
@@ -272,6 +276,33 @@ void ajustaDsAdd(void)
 }
 
 
+void ajustaIncAD(void)
+{
+    int16_t result;
+    int16_t opcion;
+    int16_t incAD;
+    while (1==1)
+    {
+        chprintf((BaseSequentialStream *)&SD2,"Add a A/D %d o/oo\n\r",incAdPormil);
+        chprintf((BaseSequentialStream *)&SD2,"1 Nuevo valor\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"2 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 2);
+        chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        if (result==2 || (result==0 && opcion==2))
+            return;
+        if (result==0 && opcion==1)
+        {
+            incAD = incAdPormil;
+            result = preguntaNumero((BaseChannel *)&SD2, "Nuevo valor o/oo", &incAD, -600, 600);
+            if (result == 0)
+            {
+                incAdPormil = incAD;
+                escribeVariables();
+            }
+        }
+    }
+}
+
 void opciones(void)
 {
     int16_t result;
@@ -279,7 +310,7 @@ void opciones(void)
     uint8_t estDes;
     uint32_t sec2change;
     uint32_t secActual, secAmanecer, secAnochecer;
-
+    float vBat;
     char buff[50];
     initSerial();
     while (1==1)
@@ -287,10 +318,15 @@ void opciones(void)
         leeVariables();
         calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
         calendar::estadoDeseadoPuerta(&estDes, &sec2change);
+        leeTension(&vBat);
+        float porcBat = hallaCapBat(&vBat);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
         calendar::printFecha(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
         calendar::printHoras(buff,sizeof(buff));
+        chprintf((BaseSequentialStream *)&SD2,"Tension bateria:%.2f (%d o/o) compAD:%d o/oo\n\r",vBat,(uint16_t) porcBat,incAdPormil);
+        if (tensionCritica())
+            chprintf((BaseSequentialStream *)&SD2,"OJO: Tension bateria criticamente baja\n\r");
         chprintf((BaseSequentialStream *)&SD2,"Hora amanecer y atardecer UTC: %s\n\r",buff);
         chprintf((BaseSequentialStream *)&SD2,"sec. amanecer:%d. anochecer:%d\n\r",secAmanecer, secAnochecer);
         chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d:%s\n\r",secActual, sec2change, estDes,estPuertaStr[estDes]);
@@ -304,10 +340,11 @@ void opciones(void)
         chprintf((BaseSequentialStream *)&SD2,"3 Posiciones de servos\n\r");
         chprintf((BaseSequentialStream *)&SD2,"4 Minutos adicionales\n\r");
         chprintf((BaseSequentialStream *)&SD2,"5 Correccion de hora\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"6 Salir\n\r");
-        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 6);
+        chprintf((BaseSequentialStream *)&SD2,"6 Correccion A/D\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"7 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 7);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        if (result==2 || (result==0 && opcion==6))
+        if (result==2 || (result==0 && opcion==7))
         {
             closeSerial();
             return;
@@ -322,5 +359,7 @@ void opciones(void)
             ajustaAddMinutos();
         if (result==0 && opcion==5)
             ajustaDsAdd();
+        if (result==0 && opcion==6)
+            ajustaIncAD();
     }
 }

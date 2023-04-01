@@ -1,18 +1,18 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+ ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
 
 #include "ch.h"
 #include "hal.h"
@@ -23,7 +23,6 @@
 #include "w25q16/variables.h"
 #include "w25q16.h"
 
-
 void initSensores(void);
 void initSerial(void);
 void closeSerial(void);
@@ -31,7 +30,8 @@ void leeGPS(void);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
 void abrePuertaC(void);
 void cierraPuertaC(void);
-int chprintf(BaseSequentialStream *chp, const char *fmt, ...) ;
+int chprintf(BaseSequentialStream *chp, const char *fmt, ...);
+void pruebaADC(void);
 //void opciones(void);
 //void sleepW25q16(void);
 void leeVariablesC(void);
@@ -76,25 +76,22 @@ extern uint8_t GL_Flag_External_WakeUp;
 // Alimentando en 3.3V sin placa PCB, 25 uA
 // Alimentando en 5V sin PCB: 23 uA (en la anterior no quite regulador)
 // Alimentando en 5V con PCB: 25 uA ¿? el pullup de 50k del mosfet debería consumir unos 12 uA
-
 volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
-extern uint16_t autoPuerta;  // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
+extern uint16_t autoPuerta; // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern int16_t dsAddPordia;
 extern uint16_t posAbierto;
 extern uint16_t posCerrado;
+extern uint16_t autoPuerta; // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern uint32_t secAdaptacion;
 
-
-void parpadear(uint8_t numVeces,uint16_t ms)
-{
+void parpadear(uint8_t numVeces, uint16_t ms) {
     palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
-    for (uint8_t i=0;i<numVeces;i++)
-    {
-      palClearPad(GPIOC, GPIOC_LED);    // enciende led placa
-      chThdSleepMilliseconds(10);
-      palSetPad(GPIOC, GPIOC_LED);    // apaga led placa
-      chThdSleepMilliseconds(ms);
+    for (uint8_t i = 0; i < numVeces; i++) {
+        palClearPad(GPIOC, GPIOC_LED); // enciende led placa
+        chThdSleepMilliseconds(10);
+        palSetPad(GPIOC, GPIOC_LED); // apaga led placa
+        chThdSleepMilliseconds(ms);
     }
     palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_INPUT_ANALOG);
 }
@@ -104,42 +101,43 @@ int main(void) {
     uint32_t sec2change;
     char buffer[90], buff[50];
 
-  halInit();
-  chSysInit();
-  initSerial();
-  parpadear(2,250);
-  leeVariablesC();
-  iniciaSecAdaptacionC();
-  printSerial("Inicializado\n\r");
-  while (1==1)
-  {
-      leeVariablesC();
-      estadoDeseadoPuertaC(&estDes, &sec2change);
-      printFechaC(buff,sizeof(buff));
-      chsnprintf(buffer,sizeof(buffer),"Fecha actual UTC: %s\n\r",buff);
-      printSerial(buffer);
-      chsnprintf(buffer,sizeof(buffer),"Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",autoPuerta, estDes,sec2change);
-      printSerial(buffer);
-      if (estDes == 1)
-          abrePuertaC();
-      else
-          cierraPuertaC();
-      chsnprintf(buffer,sizeof(buffer),"A dormir %d s\n\r",sec2change);
-      printSerial(buffer);
-      ports_set_lowpower();
-      stop(sec2change);
-      addDsC(dsAddPordia);
-      if (GL_Flag_External_WakeUp==0)
-      {
-          parpadear(1,250);
-          printSerial("Timeout desde stop\n\r");
-      }
-      else
-          opciones();
-  }
-//  leeGPS(); // leer GPS
-//  while (!enHora) // espero a que termine
-//  {
-//      chThdSleepMilliseconds(200);
-//  }
+    halInit();
+    chSysInit();
+    initSerial();
+    parpadear(2, 250);
+    leeVariablesC();
+    if (autoPuerta != 3)
+        secAdaptacion = 0;
+    printSerial("Inicializado\n\r");
+    while (1 == 1) {
+        leeVariablesC();
+        estadoDeseadoPuertaC(&estDes, &sec2change);
+        printFechaC(buff, sizeof(buff));
+        chsnprintf(buffer, sizeof(buffer), "Fecha actual UTC: %s\n\r", buff);
+        printSerial(buffer);
+        chsnprintf(buffer, sizeof(buffer),
+                   "Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",
+                   autoPuerta, estDes, sec2change);
+        printSerial(buffer);
+        if (estDes == 1)
+            abrePuertaC();
+        else
+            cierraPuertaC();
+        chsnprintf(buffer, sizeof(buffer), "A dormir %d s\n\r", sec2change);
+        printSerial(buffer);
+        ports_set_lowpower();
+        stop(sec2change);
+        addDsC(dsAddPordia);
+        if (GL_Flag_External_WakeUp == 0) {
+            parpadear(1, 100);
+            printSerial("Timeout desde stop\n\r");
+        }
+        else
+            opciones();
+    }
+    //  leeGPS(); // leer GPS
+    //  while (!enHora) // espero a que termine
+    //  {
+    //      chThdSleepMilliseconds(200);
+    //  }
 }

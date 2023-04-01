@@ -36,6 +36,9 @@ static PWMConfig pwmcfg = {
   0
 };
 
+bool tensionCritica(void);
+
+
 void initServo(void)
 {
 /*
@@ -84,6 +87,8 @@ void mueveServoPosC(uint16_t porcPosicion)
 
 void cierraPuertaC(void)
 {
+    if (tensionCritica())
+        return;
     uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
     mueveServoPos(posIntermedia,1000);
     chThdSleepMilliseconds(1500);

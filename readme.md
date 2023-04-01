@@ -1,4 +1,4 @@
-# Notificación de jaula
+# Alimentador de gatos
 
 ## Sistema operativo
 ChibiOS/RT port for ARM-Cortex-M4 STM32F411.
@@ -7,9 +7,18 @@ ChibiOS/RT port for ARM-Cortex-M4 STM32F411.
 Datos en https://stm32-base.org/boards/STM32F411CEU6-WeAct-Black-Pill-V2.0.html
 
 ## Conexiones
-- A7: ADC in (medida tensión batería)
-- A2: T2TX (a RX SIM800L)
-- A3: T2RX (a TX SIM800L)
+- A1: Sensor 1
+- A2: Sensor 2
+- A2: TX2 (a RX Configuracion)
+- A3: RX2 (a TX Configuracion)
+- A9: TX1 (a GPS)
+- A10: RX1 (a GPS)
+- B0: ADC in divide Ubat por 220/(220+91)
+- B8: PWM para Servo
+- B13: ONGPS
+- B14: ONSERVO
+- B15: ON-AD
+
 
 w25q16
 - CS -   PA4
@@ -18,8 +27,4 @@ w25q16
 - MOSI - PA7    SPI1_MOSI
 
 ## Parametros
-* El telefono por defecto y el pin se guardan en flash
-
-## Ordenes
-- telefono: 619776954 => para avisos espontaneos es el que utilizara
-- pin: 7642 => ajusta el pin. En la primera configuración el pin no debe estar asignado
+* Las configuraciones se guardan en flash
