@@ -19,6 +19,9 @@ extern "C"
 {
     void leeGPS(void);
 }
+
+void printSerialCPP(const char *msg);
+
 /*
  * Para leer hora:
  * - Arranca un proceso para conectar el GPS
@@ -27,7 +30,7 @@ extern "C"
  * Verde GPS = TXGPS -> A10 (RX1)
  */
 
-static const SerialConfig ser_cfg = {9600, 0, 0, 0, };
+static const SerialConfig ser_cfg = {2400, 0, 0, 0, };
 
 thread_t *gpsProcess = NULL;
 uint8_t enHora=0, hayUbicacion;
@@ -129,6 +132,7 @@ void leeGPS(void)
     event_listener_t receivedData;
     char *parametros[30];
 
+    printSerialCPP("Leo GPS...\n\r");
     palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
     palClearPad(GPIOB, GPIOB_ONGPS);
     palClearPad(GPIOA, GPIOA_TX1);
@@ -149,7 +153,7 @@ void leeGPS(void)
         evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100));
         if (dsEsperandoUbicacion>0)
             dsEsperandoUbicacion += 1;
-        if (dsEsperandoUbicacion>100)
+        if (dsEsperandoUbicacion>300)
             break;
         chprintf((BaseSequentialStream *)&SD1,"P");
         if (evt & EVENT_MASK(1)) // Algo ha entrado desde SD1
@@ -159,10 +163,11 @@ void leeGPS(void)
             {
                 chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer, sizeof(buffer), TIME_MS2I(100),&huboTimeout);
                 // IMPACIENTE!!!!!
-                strcpy(buffer,"$GPRMC,121826.00,A,4023.11591,N,00421.89349,W,0.047,,170123,,,A*69");
-
+//                strcpy(buffer,"$GPRMC,121826.00,A,4023.11591,N,00421.89349,W,0.047,,170123,,,A*69");
                 if (huboTimeout)
                     continue;
+                printSerialCPP(buffer);
+                printSerialCPP("\n\r");
                 parseStr(buffer,parametros, ",",&numParam);
                 if (numParam<5)
                     continue;

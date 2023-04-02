@@ -108,6 +108,7 @@ int main(void) {
     leeVariablesC();
     if (autoPuerta != 3)
         secAdaptacion = 0;
+ //   leeGPS();
     printSerial("Inicializado\n\r");
     while (1 == 1) {
         leeVariablesC();
