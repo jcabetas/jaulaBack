@@ -72,7 +72,8 @@ extern uint8_t GL_Flag_External_WakeUp;
  * - Pin A0 (GPIOA_KEY) es pulsador KEY para despertar a la placa
  */
 
-// Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet).
+// ANTES TENIA Consumo: 107 uA. Si quito la pila, baja a 76 uA (consumo por alimentacion a mosfet).
+// AHORA: con placa 240 uA (pushpull), sin placa desde 5V 200 uA
 // Alimentando en 3.3V sin placa PCB, 25 uA
 // Alimentando en 5V sin PCB: 23 uA (en la anterior no quite regulador)
 // Alimentando en 5V con PCB: 25 uA ¿? el pullup de 50k del mosfet debería consumir unos 12 uA
@@ -106,6 +107,10 @@ int main(void) {
     initSerial();
     parpadear(2, 250);
     leeVariablesC();
+//    palSetPad(GPIOA, GPIOA_W25Q16_CS);
+//    palSetPadMode(GPIOA, GPIOA_W25Q16_CS, PAL_MODE_OUTPUT_PUSHPULL);
+//    ports_set_lowpower();
+//    stop(1000);
     if (autoPuerta != 3)
         secAdaptacion = 0;
  //   leeGPS();
