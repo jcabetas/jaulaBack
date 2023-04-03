@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -5106,16 +5106,16 @@ Source: AVX .. aphvc.pdf</description>
 <circle x="4.572" y="0.254" radius="4.204446875" width="0.127" layer="94"/>
 </symbol>
 <symbol name="HT7133">
-<pin name="INPUT" x="-13.97" y="2.54" visible="pin" length="middle" direction="pwr"/>
-<pin name="+3.3V" x="15.24" y="2.54" visible="pin" length="middle" direction="sup" rot="R180"/>
-<pin name="GND" x="0" y="-12.7" visible="pin" length="middle" rot="R90"/>
+<pin name="INPUT@1" x="-13.97" y="2.54" visible="pin" length="middle" direction="pwr"/>
+<pin name="+3.3V" x="17.78" y="2.54" visible="pin" length="middle" direction="sup" rot="R180"/>
+<pin name="GND" x="17.78" y="-5.08" visible="pin" length="middle" rot="R180"/>
 <wire x1="-8.89" y1="5.08" x2="-8.89" y2="-7.62" width="0.254" layer="94"/>
-<wire x1="-8.89" y1="-7.62" x2="10.16" y2="-7.62" width="0.254" layer="94"/>
-<wire x1="10.16" y1="-7.62" x2="10.16" y2="5.08" width="0.254" layer="94"/>
-<wire x1="10.16" y1="5.08" x2="-8.89" y2="5.08" width="0.254" layer="94"/>
+<wire x1="-8.89" y1="-7.62" x2="12.7" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="12.7" y1="-7.62" x2="12.7" y2="5.08" width="0.254" layer="94"/>
+<wire x1="12.7" y1="5.08" x2="-8.89" y2="5.08" width="0.254" layer="94"/>
 <text x="-8.89" y="6.35" size="1.27" layer="94">&gt;NAME</text>
-<pin name="PIN" x="5.08" y="-12.7" length="middle" direction="nc" function="dot" rot="R90"/>
 <text x="-7.62" y="-10.16" size="1.27" layer="95">HT7133</text>
+<pin name="INPUT@2" x="-13.97" y="-5.08" visible="pin" length="middle" direction="pwr"/>
 </symbol>
 </symbols>
 <devicesets>
@@ -5221,10 +5221,10 @@ Imax 250mA</description>
 <devices>
 <device name="" package="SOT89">
 <connects>
-<connect gate="G$1" pin="+3.3V" pad="2"/>
-<connect gate="G$1" pin="GND" pad="3"/>
-<connect gate="G$1" pin="INPUT" pad="1"/>
-<connect gate="G$1" pin="PIN" pad="4"/>
+<connect gate="G$1" pin="+3.3V" pad="3"/>
+<connect gate="G$1" pin="GND" pad="1"/>
+<connect gate="G$1" pin="INPUT@1" pad="2"/>
+<connect gate="G$1" pin="INPUT@2" pad="4"/>
 </connects>
 <technologies>
 <technology name=""/>
@@ -5585,16 +5585,15 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <part name="GND10" library="supply1" deviceset="GND" device="" value=""/>
 <part name="SUPPLY1" library="supply2" deviceset="+5V" device=""/>
 <part name="SUPPLY3" library="supply2" deviceset="+5V" device=""/>
-<part name="HT7333" library="jcf" deviceset="HT7133" device=""/>
 <part name="+3V1" library="supply1" deviceset="+3V3" device=""/>
 <part name="+3V2" library="supply1" deviceset="+3V3" device=""/>
 <part name="+3V3" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND3" library="supply1" deviceset="GND" device="" value=""/>
-<part name="GND9" library="supply1" deviceset="GND" device="" value=""/>
 <part name="C2" library="rcl" deviceset="C-EU" device="C1206" value="10uF"/>
 <part name="GND5" library="supply1" deviceset="GND" device="" value=""/>
 <part name="C1" library="rcl" deviceset="C-EU" device="C1206" value="10uF"/>
 <part name="GND7" library="supply1" deviceset="GND" device="" value=""/>
+<part name="IC1" library="jcf" deviceset="HT7133" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -5663,16 +5662,15 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <instance part="GND10" gate="1" x="-5.08" y="-54.61"/>
 <instance part="SUPPLY1" gate="+5V" x="114.3" y="40.3987"/>
 <instance part="SUPPLY3" gate="+5V" x="137.16" y="-95.0087"/>
-<instance part="HT7333" gate="G$1" x="144.78" y="30.48"/>
 <instance part="+3V1" gate="G$1" x="68.58" y="-35.56" rot="R180"/>
 <instance part="+3V2" gate="G$1" x="20.32" y="-77.47" rot="R180"/>
-<instance part="+3V3" gate="G$1" x="165.1" y="38.1"/>
-<instance part="GND3" gate="1" x="144.78" y="12.7"/>
-<instance part="GND9" gate="1" x="149.86" y="12.7"/>
+<instance part="+3V3" gate="G$1" x="180.34" y="38.1"/>
+<instance part="GND3" gate="1" x="172.72" y="15.24"/>
 <instance part="C2" gate="G$1" x="128.27" y="27.94"/>
 <instance part="GND5" gate="1" x="128.27" y="19.05"/>
-<instance part="C1" gate="G$1" x="162.56" y="27.94"/>
-<instance part="GND7" gate="1" x="162.56" y="19.05"/>
+<instance part="C1" gate="G$1" x="180.34" y="27.94"/>
+<instance part="GND7" gate="1" x="180.34" y="19.05"/>
+<instance part="IC1" gate="G$1" x="152.4" y="30.48"/>
 </instances>
 <busses>
 </busses>
@@ -5725,14 +5723,10 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <wire x1="-5.08" y1="-49.53" x2="-5.08" y2="-52.07" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="HT7333" gate="G$1" pin="GND"/>
 <pinref part="GND3" gate="1" pin="GND"/>
-<wire x1="144.78" y1="17.78" x2="144.78" y2="15.24" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="HT7333" gate="G$1" pin="PIN"/>
-<wire x1="149.86" y1="17.78" x2="149.86" y2="15.24" width="0.1524" layer="91"/>
-<pinref part="GND9" gate="1" pin="GND"/>
+<pinref part="IC1" gate="G$1" pin="GND"/>
+<wire x1="170.18" y1="25.4" x2="172.72" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="172.72" y1="25.4" x2="172.72" y2="17.78" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="C2" gate="G$1" pin="2"/>
@@ -5742,7 +5736,7 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <segment>
 <pinref part="C1" gate="G$1" pin="2"/>
 <pinref part="GND7" gate="1" pin="GND"/>
-<wire x1="162.56" y1="22.86" x2="162.56" y2="21.59" width="0.1524" layer="91"/>
+<wire x1="180.34" y1="22.86" x2="180.34" y2="21.59" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="+5V" class="0">
@@ -5769,13 +5763,18 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <wire x1="95.25" y1="33.02" x2="114.3" y2="33.02" width="0.1524" layer="91"/>
 <wire x1="114.3" y1="33.02" x2="114.3" y2="37.8587" width="0.1524" layer="91"/>
 <pinref part="SUPPLY1" gate="+5V" pin="+5V"/>
-<pinref part="HT7333" gate="G$1" pin="INPUT"/>
 <wire x1="114.3" y1="33.02" x2="128.27" y2="33.02" width="0.1524" layer="91"/>
 <junction x="114.3" y="33.02"/>
 <pinref part="C2" gate="G$1" pin="1"/>
-<wire x1="128.27" y1="33.02" x2="130.81" y2="33.02" width="0.1524" layer="91"/>
+<wire x1="128.27" y1="33.02" x2="137.16" y2="33.02" width="0.1524" layer="91"/>
+<wire x1="137.16" y1="33.02" x2="138.43" y2="33.02" width="0.1524" layer="91"/>
 <wire x1="128.27" y1="33.02" x2="128.27" y2="30.48" width="0.1524" layer="91"/>
 <junction x="128.27" y="33.02"/>
+<pinref part="IC1" gate="G$1" pin="INPUT@1"/>
+<wire x1="137.16" y1="33.02" x2="137.16" y2="25.4" width="0.1524" layer="91"/>
+<pinref part="IC1" gate="G$1" pin="INPUT@2"/>
+<wire x1="137.16" y1="25.4" x2="138.43" y2="25.4" width="0.1524" layer="91"/>
+<junction x="137.16" y="33.02"/>
 </segment>
 <segment>
 <pinref part="T1" gate="G$1" pin="S"/>
@@ -5996,14 +5995,13 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <pinref part="+3V2" gate="G$1" pin="+3V3"/>
 </segment>
 <segment>
-<pinref part="HT7333" gate="G$1" pin="+3.3V"/>
-<wire x1="160.02" y1="33.02" x2="162.56" y2="33.02" width="0.1524" layer="91"/>
-<wire x1="162.56" y1="33.02" x2="165.1" y2="33.02" width="0.1524" layer="91"/>
-<wire x1="165.1" y1="33.02" x2="165.1" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="180.34" y1="30.48" x2="180.34" y2="33.02" width="0.1524" layer="91"/>
 <pinref part="+3V3" gate="G$1" pin="+3V3"/>
 <pinref part="C1" gate="G$1" pin="1"/>
-<wire x1="162.56" y1="33.02" x2="162.56" y2="30.48" width="0.1524" layer="91"/>
-<junction x="162.56" y="33.02"/>
+<pinref part="IC1" gate="G$1" pin="+3.3V"/>
+<wire x1="180.34" y1="33.02" x2="180.34" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="170.18" y1="33.02" x2="180.34" y2="33.02" width="0.1524" layer="91"/>
+<junction x="180.34" y="33.02"/>
 </segment>
 </net>
 </nets>
