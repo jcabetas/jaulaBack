@@ -78,9 +78,7 @@ extern "C" {
 const uint8_t month_len[12] = {
   31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
-static const uint16_t accu_month_len[12] = {
-  0, 31, 59,  90, 120, 151, 181, 212, 243, 273, 304, 334
-};
+
 
 
 static void rtc_enter_init(RTCDriver *RTCD1) {
@@ -123,23 +121,6 @@ static void rtc_tr2tmt(const uint32_t tr, struct tm *tim) {
 }
 
 
-/*
- * complete day of year, and day of the week
- */
-void completeYdayWday(struct tm *tim)
-{
-    uint16_t year;
-    uint8_t isLeapYear;
-    /* compute day of year, even for leap year */
-    year = tim->tm_year + 1900;
-    tim->tm_yday = tim->tm_mday - 1;
-    tim->tm_yday += accu_month_len[tim->tm_mon];
-    isLeapYear = (year%4 == 0 && year%100 != 0) || year%400 == 0;
-    if (isLeapYear && tim->tm_mon>1)
-        tim->tm_yday++;
-    /* compute day of the week */
-    tim->tm_wday = dayofweek(year, tim->tm_mon+1, tim->tm_mday);
-}
 
 /*
  *  tm_mday int day of the month            1-31
@@ -159,7 +140,7 @@ static void rtc_dr2tmd(const uint32_t dr, struct tm *tim) {
     if (tim->tm_mday>31)
         tim->tm_mday = 31;
     tim->tm_wday = (dr >> RTC_DR_WDU_OFFSET) & 7;
-    completeYdayWday(tim);
+    calendar::completeYdayWday(tim);
 }
 
 /*

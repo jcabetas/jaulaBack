@@ -27,6 +27,7 @@ void initSensores(void);
 void initSerial(void);
 void closeSerial(void);
 void leeGPS(void);
+void leeHora(void);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
 void abrePuertaC(void);
 void cierraPuertaC(void);
@@ -78,10 +79,10 @@ volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
 extern uint16_t autoPuerta; // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern int16_t dsAddPordia;
-extern uint16_t posAbierto;
-extern uint16_t posCerrado;
-extern uint16_t autoPuerta; // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
+//extern uint16_t posAbierto;
+//extern uint16_t posCerrado;
 extern uint32_t secAdaptacion;
+extern uint8_t hayGps;
 
 void parpadear(uint8_t numVeces, uint16_t ms) {
     palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
@@ -106,14 +107,16 @@ int main(void) {
     leeVariablesC();
     if (autoPuerta != 3)
         secAdaptacion = 0;
- //   leeGPS();
+    hayGps = 1; // supongo que hay GPS
     printSerial("Inicializado\n\r");
     while (1 == 1) {
         leeVariablesC();
-        estadoDeseadoPuertaC(&estDes, &sec2change);
+        leeGPS();
+        leeHora();
         printFechaC(buff, sizeof(buff));
         chsnprintf(buffer, sizeof(buffer), "Fecha actual UTC: %s\n\r", buff);
         printSerial(buffer);
+        estadoDeseadoPuertaC(&estDes, &sec2change);
         chsnprintf(buffer, sizeof(buffer),
                    "Main, auto puerta:%d estado puerta:%d, cambio en %d s\n\r",
                    autoPuerta, estDes, sec2change);

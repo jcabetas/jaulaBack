@@ -24,20 +24,22 @@ uint16_t diaAdaptado;
 extern struct queu_t colaMsgTxCan;
 extern event_source_t sendMsgCAN_source;
 
+static const uint16_t accu_month_len[12] = {
+  0, 31, 59,  90, 120, 151, 181, 212, 243, 273, 304, 334
+};
+
 uint16_t calendar::minAmanecer = 370;
 uint16_t calendar::minAnochecer = 1194;
 uint16_t calendar::diaCalculado = 9999;
 float calendar::longitudRad = -0.0697766927f; //  -3.99791
 float calendar::latitudRad = 0.7058975433f;   //  40.44495
-time_t calendar::fechaCambioVer2Inv = 0;
-time_t calendar::fechaCambioInv2Ver = 0;
 uint16_t calendar::mdayActualizada = 99;
 struct fechaHora calendar::fechaHoraNow = {0,0};
 struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 
 extern "C"
 {
-    void leeHora(struct tm *tmAhora);
+    void leeHora(void);
     void printFechaC(char *buff, uint16_t longBuff);
     void actualizaAmanAnoch(void);
     void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
@@ -45,6 +47,30 @@ extern "C"
     void iniciaSecAdaptacionC(void);
 }
 
+
+/*
+ ***************************************************
+ * Funciones necesarias para leer y ajustar fechas *
+ ***************************************************
+ */
+
+/*
+ * complete day of year, and day of the week
+ */
+void calendar::completeYdayWday(struct tm *tim)
+{
+    uint16_t year;
+    uint8_t isLeapYear;
+    /* compute day of year, even for leap year */
+    year = tim->tm_year + 1900;
+    tim->tm_yday = tim->tm_mday - 1;
+    tim->tm_yday += accu_month_len[tim->tm_mon];
+    isLeapYear = (year%4 == 0 && year%100 != 0) || year%400 == 0;
+    if (isLeapYear && tim->tm_mon>1)
+        tim->tm_yday++;
+    /* compute day of the week */
+    tim->tm_wday = dayofweek(year, tim->tm_mon+1, tim->tm_mday);
+}
 
 // segundos Unix en UTC
 time_t calendar::getSecUnix(struct tm *tm)
@@ -72,86 +98,68 @@ time_t calendar::getSecUnix(struct tm *tm)
         + (year_for_leap - 69) / 4                  // Every 4 years is     leap...
         - (year_for_leap - 1) / 100                 // Except centuries...
         + (year_for_leap + 299) / 400)));           // Except 400s.
-
-//    // añade desvio respecto UTM
-//    if (tm->tm_isdst==0)
-//        rt -= 3600;
-//    else
-//        rt -= 7200;
-
     return rt < 0 ? -1 : rt;
 }
 
 
-time_t calendar::getSecUnix(void) {
-    return fechaHoraNow.secsUnix;
+void calendar::setLatLong(float latitudRadNoche, float longitudRadNoche)
+{
+    latitudRad = latitudRadNoche;
+    longitudRad = longitudRadNoche;
 }
 
-void calendar::getFecha(struct tm *fecha)
+/*
+ * ver https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF
+ * Altura solar ajustada a 93 grados (en 96 es demasiado oscuro)
+ */
+void calendar::ajustaHorasLuz(void)
 {
-    memcpy(fecha, &fechaNow, sizeof(fechaNow));
-}
+    float diaAno, fraccAno;
+    float decl, ha;
 
-void calendar::getFechaHora(struct fechaHora *fechHora)
-{
-    fechHora->secsUnix = fechaHoraNow.secsUnix;
-    fechHora->dsUnix = fechaHoraNow.dsUnix;
-}
-
-uint8_t calendar::getDOW(void)
-{
-    return fechaNow.tm_wday;
-}
-
-//Franjas horarias Tarifa de acceso 2.0TD (Península, Baleares y Canarias)
-// Punta: 10:00 - 14:00 y 18:00 - 22:00
-// Llano: 08:00 - 10:00, 14:00 - 18:0 y  22:00 - 00:00
-// Valle: 00:00 - 08:00 y findes
-enum getPeriodoTarifa calendar::getPeriodoTarifa(void)
-{
-    struct tm fecha;
-    getFecha(&fecha);
-    if (fecha.tm_wday==0 || fecha.tm_wday==6 || fecha.tm_hour<8)
-        return valle;
-    if ((fecha.tm_hour>=10 && fecha.tm_hour<14) || (fecha.tm_hour>=18 && fecha.tm_hour<22))
-        return punta;
-    return llano;
+    if (diaCalculado == fechaNow.tm_yday)
+        return; // ya estaba calculado
+    diaAno = (float) (fechaNow.tm_yday);
+    fraccAno = 2.0*M_PI/365.0*(diaAno-0.5f);
+//    eqTime = +229.18f*(0.000075f+0.001868f*cos(fraccAno)-0.032077f*sin(fraccAno)-0.014615f*cos(2.0f*fraccAno)-0.040849f*sin(2.0f*fraccAno));
+    decl = 0.006918f-0.399912f*cosf(fraccAno) + 0.070257f*sinf(fraccAno)-0.006758f*cosf(2.0f*fraccAno)+0.000907f*sinf(2.0f*fraccAno)-0.002697f*cosf(3.0f*fraccAno) + 0.00148f*sinf(3.0f*fraccAno);
+    ha = -acosf(cosf(93.0f*M_PI/180.0f)/cosf(latitudRad)/cosf(decl)-tanf(latitudRad)*tan(decl));
+    minAmanecer = 60.0f*(12.0f+ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
+    minAnochecer = 60.0*(12.0f-ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
+    diaCalculado = fechaNow.tm_yday;
 }
 
 
 
-uint32_t calendar::dsDiff(struct fechaHora *fechHoraOld)
-{
-    if (fechaHoraNow.secsUnix < fechHoraOld->secsUnix)
-    {
-        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
-        fechHoraOld->dsUnix =  fechaHoraNow.dsUnix;
-        fechHoraOld->secsUnix =  fechaHoraNow.secsUnix;
-    }
-    uint32_t ds = 10*(fechaHoraNow.secsUnix - fechHoraOld->secsUnix) + fechaHoraNow.dsUnix - fechHoraOld->dsUnix;
-    return ds;
-}
+/****************************************
+ * Funciones para ajustar y leer fechas *
+ ****************************************
+ */
 
-uint32_t calendar::sDiff(time_t *timetOld)
+void calendar::rtcGetFecha(void)
 {
-    if (fechaHoraNow.secsUnix < *timetOld)
-    {
-        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
-        *timetOld = fechaHoraNow.secsUnix;
-    }
-    return (fechaHoraNow.secsUnix - *timetOld);
+    struct tm tim;
+    uint16_t ds;
+    rtcGetTM(&RTCD1, &tim, &ds);
+    completeYdayWday(&tim);
+    memcpy(&fechaNow, &tim, sizeof(fechaNow));
+    fechaHoraNow.secsUnix = getSecUnix(&tim);
+    fechaHoraNow.dsUnix = ds;
+    ajustaHorasLuz();
 }
 
 
-uint32_t calendar::sDiff(struct fechaHora *fechHoraOld)
+void leeHora(void)
 {
-    if (fechaHoraNow.secsUnix < fechHoraOld->secsUnix)
-    {
-        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
-        fechHoraOld->dsUnix =  fechaHoraNow.dsUnix;
-        fechHoraOld->secsUnix =  fechaHoraNow.secsUnix;
-    }
-    return (uint32_t) (fechaHoraNow.secsUnix - fechHoraOld->secsUnix);
+    calendar::rtcGetFecha();
+}
+
+void calendar::rtcSetFecha(struct tm *fecha, uint16_t ds)
+{
+    fechaHoraNow.secsUnix = calendar::getSecUnix(fecha);
+    fechaHoraNow.dsUnix = ds;
+    rtcSetTM(&RTCD1, fecha, ds);
+    rtcGetFecha();
 }
 
 void calendar::cambiaFecha(uint16_t *anyo, uint8_t *mes, uint8_t *dia, uint8_t *hora, uint8_t *min, uint8_t *seg, uint8_t *dsPar)
@@ -175,7 +183,6 @@ void calendar::cambiaFecha(uint16_t *anyo, uint8_t *mes, uint8_t *dia, uint8_t *
     if (dsPar!=NULL && *dsPar<=9)
         ds = *dsPar;
     rtcSetFecha(&fechaUTC,ds);
-    init();
 }
 
 void calendar::cambiaFechaTM(uint8_t anyo, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t seg, uint8_t dsPar)
@@ -203,15 +210,70 @@ void calendar::cambiaFechaTM(uint8_t anyo, uint8_t mes, uint8_t dia, uint8_t hor
     rtcSetFecha(&fechaUTC,ds);
 }
 
+/*
+ * Funciones que suponen haber leido hora antes con rtcGetFecha()
+ */
 
-void calendar::rtcSetFecha(struct tm *fecha, uint16_t ds)
-{
-    fechaHoraNow.secsUnix = calendar::getSecUnix(fecha);
-    fechaHoraNow.dsUnix = ds;
-    rtcSetTM(&RTCD1, fecha, ds);
-    init();
-    //fecha::actualizaCuandoPuedas();
+time_t calendar::getSecUnix(void) {
+    return fechaHoraNow.secsUnix;
 }
+
+void calendar::gettm(struct tm *fecha)
+{
+    memcpy(fecha, &fechaNow, sizeof(fechaNow));
+}
+
+void calendar::getFechaHora(struct fechaHora *fechHora)
+{
+    fechHora->secsUnix = fechaHoraNow.secsUnix;
+    fechHora->dsUnix = fechaHoraNow.dsUnix;
+}
+
+uint8_t calendar::getDOW(void)
+{
+    return fechaNow.tm_wday;
+}
+
+
+
+/*
+ ************************
+ * Funciones auxiliares *
+ ************************
+ */
+uint32_t calendar::dsDiff(struct fechaHora *fechHoraOld)
+{
+    if (fechaHoraNow.secsUnix < fechHoraOld->secsUnix)
+    {
+        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
+        fechHoraOld->dsUnix =  fechaHoraNow.dsUnix;
+        fechHoraOld->secsUnix =  fechaHoraNow.secsUnix;
+    }
+    uint32_t ds = 10*(fechaHoraNow.secsUnix - fechHoraOld->secsUnix) + fechaHoraNow.dsUnix - fechHoraOld->dsUnix;
+    return ds;
+}
+
+uint32_t calendar::sDiff(time_t *timetOld)
+{
+    if (fechaHoraNow.secsUnix < *timetOld)
+    {
+        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
+        *timetOld = fechaHoraNow.secsUnix;
+    }
+    return (fechaHoraNow.secsUnix - *timetOld);
+}
+
+uint32_t calendar::sDiff(struct fechaHora *fechHoraOld)
+{
+    if (fechaHoraNow.secsUnix < fechHoraOld->secsUnix)
+    {
+        // se ha debido cambiar la hora, machacamos la hora antigua con la actual
+        fechHoraOld->dsUnix =  fechaHoraNow.dsUnix;
+        fechHoraOld->secsUnix =  fechaHoraNow.secsUnix;
+    }
+    return (uint32_t) (fechaHoraNow.secsUnix - fechHoraOld->secsUnix);
+}
+
 
 
 // anade ds a RTC. No llamar a la medianoche
@@ -240,93 +302,7 @@ void calendar::addDs(int16_t dsAdd)  {
   mdayActualizada = tim.tm_mday;
 }
 
-/*
- * ver https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF
- * Altura solar ajustada a 93 grados (en 96 es demasiado oscuro)
- */
-void calendar::ajustaHorasLuz(void)
-{
-    float diaAno, fraccAno;
-    float decl, ha;
 
-    if (diaCalculado == fechaNow.tm_yday)
-        return; // ya estaba calculado
-    diaAno = (float) (fechaNow.tm_yday);
-    fraccAno = 2.0*M_PI/365.0*(diaAno-0.5f);
-//    eqTime = +229.18f*(0.000075f+0.001868f*cos(fraccAno)-0.032077f*sin(fraccAno)-0.014615f*cos(2.0f*fraccAno)-0.040849f*sin(2.0f*fraccAno));
-    decl = 0.006918f-0.399912f*cosf(fraccAno) + 0.070257f*sinf(fraccAno)-0.006758f*cosf(2.0f*fraccAno)+0.000907f*sinf(2.0f*fraccAno)-0.002697f*cosf(3.0f*fraccAno) + 0.00148f*sinf(3.0f*fraccAno);
-    ha = -acosf(cosf(93.0f*M_PI/180.0f)/cosf(latitudRad)/cosf(decl)-tanf(latitudRad)*tan(decl));
-    minAmanecer = 60.0f*(12.0f+ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
-    minAnochecer = 60.0*(12.0f-ha*12.0f/M_PI-longitudRad*12.0f/M_PI);
-    diaCalculado = fechaNow.tm_yday;
-}
-
-
-// debe ser llamado al inicio, en cambio de fecha, o cuando cambia el año
-void calendar::ajustaFechasCambHorario(void)
-{
-    struct tm fecha;
-    uint8_t dow;
-
-    fecha.tm_year = fechaNow.tm_year;
-    fecha.tm_mon = 2; // enero = 0
-    fecha.tm_mday = 31;
-    fecha.tm_hour = 1;// son las 2am hora local
-    fecha.tm_min = 0;
-    fecha.tm_sec = 0;
-    fecha.tm_isdst = 0;
-    dow = dayofweek(fecha.tm_year+1900, fecha.tm_mon+1, fecha.tm_mday);
-    fecha.tm_mday -= dow;
-    completeYdayWday(&fecha);
-    // segundos Unix en UTC
-    fechaCambioInv2Ver = calendar::getSecUnix(&fecha);
-
-    // repetimos para el cambio de octubre
-    fecha.tm_year = fechaNow.tm_year;
-    fecha.tm_mon = 9; // enero = 0
-    fecha.tm_mday = 31;
-    fecha.tm_hour = 1; // son las 3am hora local
-    fecha.tm_min = 0;
-    fecha.tm_sec = 0;
-    fecha.tm_isdst = 1;
-    dow = dayofweek(fecha.tm_year+1900, fecha.tm_mon+1, fecha.tm_mday);
-    fecha.tm_mday -= dow;
-    fechaCambioVer2Inv = calendar::getSecUnix(&fecha);
-    
-}
-
-uint8_t calendar::esHoraVerano(void)
-{
-    if (fechaHoraNow.secsUnix>fechaCambioInv2Ver && fechaHoraNow.secsUnix<fechaCambioVer2Inv)
-        return 1;
-    else
-        return 0;
-
-}
-
-// deberia llamarse cada hora
-// no hace falta al estar todo en UTC
-//void calendar::checkDstFlagVerano(void)
-//{
-//    if (esHoraVerano())
-//    {
-//        // estamos en hora de verano. Comprueba si hay que actualizar hora y dstflag
-//        if (fechaNow.tm_isdst==0)
-//        {
-//            fechaNow.tm_hour += 1;
-//            rtcSetTM(&RTCD1, &fechaNow, 0, 1);
-//        }
-//    }
-//    else
-//    {
-//        // estamos en hora de invierno. Comprueba si hay que actualizar dstflag
-//        if (fechaNow.tm_isdst==1)
-//        {
-//            fechaNow.tm_hour -= 1;
-//            rtcSetTM(&RTCD1, &fechaNow, 0, 0);
-//        }
-//    }
-//}
 
 uint8_t calendar::esDeNoche(void)
 {
@@ -351,10 +327,7 @@ void calendar::printHoras(char *buff, uint16_t longBuff)
 
 void calendar::printFecha(char *buff, uint16_t longBuff)
 {
-    struct tm tim;
-    calendar::init();
-    calendar::getFecha(&tim);
-    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",tim.tm_mday,tim.tm_mon+1,tim.tm_year-100,tim.tm_hour,tim.tm_min,tim.tm_sec);
+    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",fechaNow.tm_mday,fechaNow.tm_mon+1,fechaNow.tm_year-100,fechaNow.tm_hour,fechaNow.tm_min,fechaNow.tm_sec);
 }
 
 
@@ -366,62 +339,6 @@ void calendar::vuelcaFecha(void)
 }
 
 
-void calendar::setLatLong(float latitudRadNoche, float longitudRadNoche)
-{
-    latitudRad = latitudRadNoche;
-    longitudRad = longitudRadNoche;
-}
-
-
-void calendar::init(void)
-{
-    struct tm tim;
-    uint16_t ds;
-    rtcGetTM(&RTCD1, &tim, &ds);
-    memcpy(&fechaNow, &tim, sizeof(fechaNow));
-    fechaHoraNow.secsUnix = getSecUnix(&tim);
-    fechaHoraNow.dsUnix = ds;
-    //ajustaFechasCambHorario(); no se usa, hay que ponerlo cuando se lee la hora si se quiere hora local
-    ajustaHorasLuz();
-}
-
-
-// habría que llamarle cada ds
-void calendar::updateEveryDs(void)
-{
-    struct tm tim;
-    uint16_t ds;
-    rtcGetTM(&RTCD1, &tim, &ds);
-    memcpy(&fechaNow, &tim, sizeof(fechaNow));
-    fechaHoraNow.secsUnix = getSecUnix(&tim);
-    fechaHoraNow.dsUnix = ds;
-    if (fechaNow.tm_sec==0 && fechaNow.tm_min==0)
-    {
-        // cada hora
-        if (fechaNow.tm_hour==0)
-        {
-            // cada dia
-            ajustaHorasLuz();
-            if (fechaNow.tm_mday==1 && fechaNow.tm_mon==0)
-            {
-                // cada anyo
-                ajustaFechasCambHorario();
-            }
-        }
-    }
-}
-
-void actualizaAmanAnoch(void)
-{
-    calendar::ajustaHorasLuz();
-}
-
-void leeHora(struct tm *tmAhora)
-{
-    calendar::init();
-    calendar::getFecha(tmAhora);
-}
-
 void printFechaC(char *buff, uint16_t longBuff)
 {
   calendar::printFecha(buff, longBuff);
@@ -429,10 +346,7 @@ void printFechaC(char *buff, uint16_t longBuff)
 
 void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer, uint32_t *secAnochecer)
 {
-    struct tm tim;
-    calendar::init();
-    calendar::getFecha(&tim);
-    *secActual = 3600L*tim.tm_hour+60L*tim.tm_min + tim.tm_sec;
+    *secActual = 3600L*fechaNow.tm_hour+60L*fechaNow.tm_min + fechaNow.tm_sec;
     *secAmanecer = 60*minAmanecer;
     *secAnochecer = 60*minAnochecer;
 }
@@ -440,7 +354,6 @@ void calendar::diSecAmanecerAnochecer(uint32_t *secActual, uint32_t *secAmanecer
 void calendar::iniciaSecAdaptacion(void)
 {
     uint32_t secActual, secAmanecer, secAnochecer;
-    calendar::init();
     calendar::diSecAmanecerAnochecer(&secActual, &secAmanecer, &secAnochecer);
     secAdaptacion = (secAnochecer + 60*addAtardecer - secAmanecer - 60*addAmanecer)/2 - 1800;
     diaAdaptado = fechaNow.tm_yday;

@@ -215,8 +215,8 @@ void ajustaHora(void)
     char buff[50];
     struct tm tim;
     int16_t result;
-    calendar::init();
-    calendar::getFecha(&tim);
+    calendar::rtcGetFecha();
+    calendar::gettm(&tim);
     ano = tim.tm_year+100;
     mes = tim.tm_mon+1;
     dia = tim.tm_mday;
@@ -320,6 +320,7 @@ void opciones(void)
         calendar::estadoDeseadoPuerta(&estDes, &sec2change);
         leeTension(&vBat);
         float porcBat = hallaCapBat(&vBat);
+        calendar::rtcGetFecha();
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
         calendar::printFecha(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);

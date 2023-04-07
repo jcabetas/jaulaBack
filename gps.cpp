@@ -13,6 +13,7 @@
 
 #include "calendarUTC/calendarUTC.h"
 #include "chprintf.h"
+#include "variables.h"
 
 
 extern "C"
@@ -30,10 +31,13 @@ void printSerialCPP(const char *msg);
  * Verde GPS = TXGPS -> A10 (RX1)
  */
 
-static const SerialConfig ser_cfg = {2400, 0, 0, 0, };
+static const SerialConfig ser_cfg = {9600, 0, 0, 0, };
 
-thread_t *gpsProcess = NULL;
-uint8_t enHora=0, hayUbicacion;
+extern int16_t dsAddPordia;
+uint8_t hayGps;
+uint8_t estadoAjusteGps = 0;
+struct fechaHora fechHoraInitGps;
+
 
 /*
  *   struct tm
@@ -51,33 +55,80 @@ uint8_t enHora=0, hayUbicacion;
 
 // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
 // => 08:21:26 Z  06/10/22
+// 0=>fijo hora inicial, 1=>ajustoDesfase, 2=>compruebo desfase y reajusto
+/*
+ * extern int16_t dsAddPordia;
+uint8_t hayGps;
+uint8_t estadoAjusteGps = 0;
+time_t secLecInicial;
+ *
+ */
 
 uint8_t ajustaHora(char *horaStr,char *fechaStr)
 {
-    struct tm fecha;
+    struct tm tmGPS, tmRTC;
+    struct fechaHora fechaHoraRTC;
+    char buff[100];
     if (strlen(horaStr)<6 || strlen(fechaStr)<6)
         return 0;
-    fecha.tm_year = atoi(&fechaStr[4])+100;
+    tmGPS.tm_year = atoi(&fechaStr[4])+100;
     fechaStr[4] = 0;
-    fecha.tm_mon = atoi(&fechaStr[2])-1;
+    tmGPS.tm_mon = atoi(&fechaStr[2])-1;
     fechaStr[2] = 0;
-    fecha.tm_mday = atoi(fechaStr);
+    tmGPS.tm_mday = atoi(fechaStr);
     // 082126.56
     uint16_t cs = atoi(&horaStr[7]);
     uint16_t ds = cs/10;
     horaStr[6] = 0;
-    fecha.tm_sec = atoi(&horaStr[4]);
+    tmGPS.tm_sec = atoi(&horaStr[4]);
     horaStr[4] = 0;
-    fecha.tm_min = atoi(&horaStr[2]);
+    tmGPS.tm_min = atoi(&horaStr[2]);
     horaStr[2] = 0;
-    fecha.tm_hour = atoi(horaStr);
-    fecha.tm_isdst = 0;
-    //void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano)
-    completeYdayWday(&fecha);
-    rtcSetTM(&RTCD1, &fecha, ds);
-    // horaStr = "082126.00"
-    // fechaStr = "061022"
-    // => 08:21:26 Z  06/10/22
+    tmGPS.tm_hour = atoi(horaStr);
+    tmGPS.tm_isdst = 0;
+    calendar::completeYdayWday(&tmGPS);
+    // tengo la fecha actual, procesala
+    if (estadoAjusteGps==0)
+    {
+        // esta es la lectura inicial
+        calendar::rtcSetFecha(&tmGPS, ds);
+        calendar::getFechaHora(&fechHoraInitGps);
+        printSerialCPP("En ajustaHora, he ajustado RTC\n\r");
+        calendar::vuelcaFecha();
+        printSerialCPP("\n\r");
+        estadoAjusteGps = 1;
+    }
+    else if (estadoAjusteGps==1)
+    {
+        // leo fecha actual para ver desfase
+        calendar::rtcGetFecha();
+        uint32_t dsDiffInit = calendar::dsDiff(&fechHoraInitGps);
+        chsnprintf(buff,sizeof(buff),"En AjustaHora, han pasado %d ds desde ajuste inicial\n\r",dsDiffInit);
+        printSerialCPP(buff);
+        if (dsDiffInit<864000L)
+        {
+            printSerialCPP("Todavia no ha pasado un dia, no hago reajuste\n\r");
+            return 1;
+        }
+        // mas de un dia de tiempo entre lecturas, haz ajustes
+        time_t secsGPS = calendar::getSecUnix(&tmGPS);
+        calendar::getFechaHora(&fechaHoraRTC);
+        calendar::gettm(&tmRTC);
+        // pongo bien la fecha
+        calendar::rtcSetFecha(&tmGPS, ds);
+        // hallo desajuste RTC
+        int32_t dsError = 10L*(fechaHoraRTC.secsUnix - secsGPS) + fechaHoraRTC.dsUnix;
+        int16_t dsPorDia = (int16_t)((dsError*864000L)/dsDiffInit);
+        dsAddPordia = -dsPorDia;
+        escribeVariables();
+        chsnprintf(buff,sizeof(buff),"En AjustaHora, GPS da %d:%d:%d y RTC:%d%d:%d\n\r",
+                   tmGPS.tm_hour,tmGPS.tm_min,tmGPS.tm_sec, tmRTC.tm_hour,tmRTC.tm_min,tmRTC.tm_sec);
+        printSerialCPP(buff);
+        chsnprintf(buff,sizeof(buff),"=> dsError: %d   dsPorDia:%d  dsAddPordia:%d\n\r",
+                   dsError, dsPorDia, dsAddPordia);
+        printSerialCPP(buff);
+        estadoAjusteGps = 2;
+    }
     return 1;
 }
 
@@ -94,11 +145,11 @@ uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora
     fecha.tm_isdst = 0;
     uint16_t ds = 0;
     //void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano)
-    completeYdayWday(&fecha);
+    calendar::completeYdayWday(&fecha);
     rtcSetTM(&RTCD1, &fecha, ds);
     // horaStr = "082126.00"
     // fechaStr = "061022"
-    // => 08:21:26 Z  06/10/22
+    // => 08:21:26 Z  06/10/22getFecha
     return 1;
 }
 
@@ -121,17 +172,19 @@ void setPos(char *latStr, char *NS, char *longStr, char *EW)
     if (!strcmp(EW,"W"))
         longDegree = -longDegree;
     calendar::setLatLong(latDegree,longDegree);
-    hayUbicacion = 1;
 }
 
+// devuelve 1 si hay GPS y consigue hora
 void leeGPS(void)
 {
-    eventmask_t evt;
-    eventflags_t flags;
     uint8_t huboTimeout;
-    event_listener_t receivedData;
     char *parametros[30];
+    uint16_t dsEsperandoHora = 0;
+    uint16_t numParam;
+    char buffer[100];
 
+    if (!hayGps || estadoAjusteGps==2)
+        return;
     printSerialCPP("Leo GPS...\n\r");
     palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
     palClearPad(GPIOB, GPIOB_ONGPS);
@@ -141,64 +194,46 @@ void leeGPS(void)
     palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
     sdStart(&SD1, &ser_cfg);
 
-    uint16_t dsEsperandoUbicacion = 0;
-
-    uint16_t numParam;
-    char buffer[100];
-
-    hayUbicacion = 0;
-    chEvtRegisterMaskWithFlags (chnGetEventSource(&SD1),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
-    while (true)
+    chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(2000), &huboTimeout);
+    if (huboTimeout)
     {
-        evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100));
-        if (dsEsperandoUbicacion>0)
-            dsEsperandoUbicacion += 1;
-        if (dsEsperandoUbicacion>300)
-            break;
-        chprintf((BaseSequentialStream *)&SD1,"P");
-        if (evt & EVENT_MASK(1)) // Algo ha entrado desde SD1
+        hayGps = 0;
+        printSerialCPP("No hay GPS\n\r");
+    }
+    else
+    {
+        while (true)
         {
-            flags = chEvtGetAndClearFlags(&receivedData);
-            if (flags & CHN_INPUT_AVAILABLE)
+            if (++dsEsperandoHora>900)
             {
-                chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer, sizeof(buffer), TIME_MS2I(100),&huboTimeout);
-                // IMPACIENTE!!!!!
-//                strcpy(buffer,"$GPRMC,121826.00,A,4023.11591,N,00421.89349,W,0.047,,170123,,,A*69");
-                if (huboTimeout)
-                    continue;
-                printSerialCPP(buffer);
-                printSerialCPP("\n\r");
-                parseStr(buffer,parametros, ",",&numParam);
-                if (numParam<5)
-                    continue;
-                // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
-                // => 08:21:26 Z  06/10/22
-                // aunque no tengamos ubicacion, compruebo la hora
-                if (numParam>10 && !strncmp("$GPRMC",parametros[0],10))
+                hayGps = 0;
+                printSerialCPP("Demasiado tiempo esperando la hora en GPS\n\r");
+                break;
+            }
+            chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(100), &huboTimeout);
+            if (huboTimeout)
+                continue;
+            parseStr(buffer,parametros, ",",&numParam);
+            if (numParam<5)
+                continue;
+            // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
+            // => 08:21:26 Z  06/10/22
+            // aunque no tengamos ubicacion, compruebo la hora
+            if (numParam>10 && !strncmp("$GPRMC",parametros[0],10))
+            {
+                if (ajustaHora(parametros[1],parametros[9]))
                 {
-                    if (ajustaHora(parametros[1],parametros[9]))
-                    {
-                        if (dsEsperandoUbicacion==0)
-                            dsEsperandoUbicacion = 1;
-                        // a ver si hay ubicacion
-                        if (!strcmp(parametros[2],"A"))
-                        {
-                            setPos(parametros[3], parametros[4], parametros[5],parametros[6]);
-                            break;
-                        }
-                    }
+                    hayGps = 1;
+                    break;
                 }
             }
+
         }
     }
     palSetPad(GPIOB, GPIOB_ONGPS);
-    chEvtUnregister(chnGetEventSource(&SD1),&receivedData);
     sdStop(&SD1);
-    calendar::init();
-    //palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_INPUT_ANALOG);
-    //palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
-    gpsProcess = NULL;
-    enHora = 1;
+    palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_INPUT_ANALOG);
+    palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
 }
 
 //
