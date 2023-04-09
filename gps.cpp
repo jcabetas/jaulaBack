@@ -22,6 +22,7 @@ extern "C"
 }
 
 void printSerialCPP(const char *msg);
+void initTimer(void);
 
 /*
  * Para leer hora:
@@ -35,6 +36,7 @@ static const SerialConfig ser_cfg = {9600, 0, 0, 0, };
 
 extern int16_t dsAddPordia;
 uint8_t hayGps;
+uint8_t llamadasAGPS = 0;
 uint8_t estadoAjusteGps = 0;
 struct fechaHora fechHoraInitGps;
 
@@ -55,7 +57,7 @@ struct fechaHora fechHoraInitGps;
 
 // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
 // => 08:21:26 Z  06/10/22
-// 0=>fijo hora inicial, 1=>ajustoDesfase, 2=>compruebo desfase y reajusto
+// 0=>fijo hora inicial, 1=>ajustoDesfase, 2=>compruebo desfase y reajusto, 3=> ajuste periodico
 /*
  * extern int16_t dsAddPordia;
 uint8_t hayGps;
@@ -129,6 +131,16 @@ uint8_t ajustaHora(char *horaStr,char *fechaStr)
         printSerialCPP(buff);
         estadoAjusteGps = 2;
     }
+    else
+    {
+        // lectura periodica
+        calendar::rtcSetFecha(&tmGPS, ds);
+        calendar::getFechaHora(&fechHoraInitGps);
+        printSerialCPP("En ajustaHora, he reajustado RTC\n\r");
+        calendar::vuelcaFecha();
+        printSerialCPP("\n\r");
+        estadoAjusteGps = 3;
+    }
     return 1;
 }
 
@@ -144,7 +156,6 @@ uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora
     fecha.tm_hour = hora;
     fecha.tm_isdst = 0;
     uint16_t ds = 0;
-    //void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano)
     calendar::completeYdayWday(&fecha);
     rtcSetTM(&RTCD1, &fecha, ds);
     // horaStr = "082126.00"
@@ -183,8 +194,9 @@ void leeGPS(void)
     uint16_t numParam;
     char buffer[100];
 
-    if (!hayGps || estadoAjusteGps==2)
+    if (!hayGps || (estadoAjusteGps==3 && (++llamadasAGPS)<60))
         return;
+    llamadasAGPS = 0;
     printSerialCPP("Leo GPS...\n\r");
     palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
     palClearPad(GPIOB, GPIOB_ONGPS);
@@ -230,87 +242,16 @@ void leeGPS(void)
 
         }
     }
+    if (hayGps && dsAddPordia==0)
+    {
+        initTimer();
+    }
     palSetPad(GPIOB, GPIOB_ONGPS);
     sdStop(&SD1);
     palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_INPUT_ANALOG);
     palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
 }
 
-//
-//
-//static THD_WORKING_AREA(wathreadGPS, 3500);
-//
-//static THD_FUNCTION(threadGPS, arg) {
-//    (void)arg;
-//    eventmask_t evt;
-//    eventflags_t flags;
-//    uint8_t huboTimeout;
-//    event_listener_t receivedData;
-//    char *parametros[30];
-//    uint16_t dsEsperandoUbicacion = 0;
-//
-//    uint16_t numParam;
-//    char buffer[100];
-//
-//    chRegSetThreadName("GPS");
-//    hayUbicacion = 0;
-//    chEvtRegisterMaskWithFlags (chnGetEventSource(&SD1),&receivedData, EVENT_MASK (1),CHN_INPUT_AVAILABLE);
-//    while (true)
-//    {
-//        evt = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100));
-//        if (chThdShouldTerminateX())
-//        {
-//            chEvtUnregister(chnGetEventSource(&SD1), &receivedData);
-//            chThdExit((msg_t) 1);
-//        }
-//        if (dsEsperandoUbicacion>0)
-//            dsEsperandoUbicacion += 1;
-//        if (dsEsperandoUbicacion>100)
-//            break;
-//        chprintf((BaseSequentialStream *)&SD1,"P");
-//        if (evt & EVENT_MASK(1)) // Algo ha entrado desde SD1
-//        {
-//            flags = chEvtGetAndClearFlags(&receivedData);
-//            if (flags & CHN_INPUT_AVAILABLE)
-//            {
-//                chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer, sizeof(buffer), TIME_MS2I(100),&huboTimeout);
-//
-//                // IMPACIENTE!!!!!
-//                strcpy(buffer,"$GPRMC,121826.00,A,4023.11591,N,00421.89349,W,0.047,,170123,,,A*69");
-//
-//                if (huboTimeout)
-//                    continue;
-//                parseStr(buffer,parametros, ",",&numParam);
-//                if (numParam<5)
-//                    continue;
-//                // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
-//                // => 08:21:26 Z  06/10/22
-//                // aunque no tengamos ubicacion, compruebo la hora
-//                if (numParam>10 && !strncmp("$GPRMC",parametros[0],10))
-//                {
-//                    if (ajustaHora(parametros[1],parametros[9]))
-//                    {
-//                        if (dsEsperandoUbicacion==0)
-//                            dsEsperandoUbicacion = 1;
-//                        // a ver si hay ubicacion
-//                        if (!strcmp(parametros[2],"A"))
-//                        {
-//                            setPos(parametros[3], parametros[4], parametros[5],parametros[6]);
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//    palSetPad(GPIOB, GPIOB_ONGPS);
-//    sdStop(&SD1);
-//    calendar::init();
-//    //palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_INPUT_ANALOG);
-//    //palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
-//    gpsProcess = NULL;
-//    enHora = 1;
-//}
 
 /*
 
@@ -326,19 +267,5 @@ $GPGSA,A,3,19,14,01,17,,,,,,,,,4.45,2.58,3.63*04
 
 */
 
-//void leeGPS(void) {
-//    if (!gpsProcess)
-//    {
-//        // configura SD1
-//        palClearPad(GPIOA, GPIOA_TX1);
-//        palSetPad(GPIOA, GPIOA_RX1);
-//        palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_ALTERNATE(7));
-//        palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
-//        sdStart(&SD1, &ser_cfg);
-//        palClearPad(GPIOB, GPIOB_ONGPS);
-//        gpsProcess = chThdCreateStatic(wathreadGPS, sizeof(wathreadGPS),
-//                                           NORMALPRIO, threadGPS, NULL);
-//    }
-//}
 
 

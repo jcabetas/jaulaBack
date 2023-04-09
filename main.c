@@ -41,6 +41,8 @@ void addDsC(int16_t dsAdd);
 void printSerial(char *msg);
 void opciones(void);
 void iniciaSecAdaptacionC(void);
+void initTimer(void);
+
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
@@ -79,8 +81,6 @@ volatile uint8_t msDelayLed = 1;
 volatile uint16_t numCuentas;
 extern uint16_t autoPuerta; // 0:cerrada, 1:abierta, 2: automatico, 3: autoConMargen
 extern int16_t dsAddPordia;
-//extern uint16_t posAbierto;
-//extern uint16_t posCerrado;
 extern uint32_t secAdaptacion;
 extern uint8_t hayGps;
 
