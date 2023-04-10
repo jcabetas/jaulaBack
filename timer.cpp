@@ -60,7 +60,7 @@ static void gps_pulse(void *)
     }
 }
 
-void initTimer(void)
+void calibraConGPS(void)
 {
     uint16_t secsEspera;
     char buff[60];

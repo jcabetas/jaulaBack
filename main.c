@@ -17,37 +17,14 @@
 #include "ch.h"
 #include "hal.h"
 #include "alimCalle.h"
-#include "gets.h"
 #include "chprintf.h"
-#include "tty.h"
-#include "w25q16/variables.h"
-#include "w25q16.h"
 
-void initSensores(void);
-void initSerial(void);
-void closeSerial(void);
-void leeGPS(void);
-void leeHora(void);
-void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
-void abrePuertaC(void);
-void cierraPuertaC(void);
-int chprintf(BaseSequentialStream *chp, const char *fmt, ...);
-void pruebaADC(void);
-//void opciones(void);
-//void sleepW25q16(void);
-void leeVariablesC(void);
-void printFechaC(char *buff, uint16_t longBuff);
-void addDsC(int16_t dsAdd);
-void printSerial(char *msg);
-void opciones(void);
-void iniciaSecAdaptacionC(void);
-void initTimer(void);
 
 extern uint8_t enHora, hayUbicacion;
 extern uint8_t GL_Flag_External_WakeUp;
 
 /*
- * Alimentador de gatosvoid addDsC(int16_t dsAdd)
+ * Alimentador de gatos
  *
  * BUCLE
  * Si es el primer arranque, pon RTC en hora con GPS
@@ -137,9 +114,4 @@ int main(void) {
         else
             opciones();
     }
-    //  leeGPS(); // leer GPS
-    //  while (!enHora) // espero a que termine
-    //  {
-    //      chThdSleepMilliseconds(200);
-    //  }
 }

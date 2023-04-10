@@ -8,9 +8,6 @@ using namespace chibios_rt;
 #include "stdlib.h"
 #include "math.h"
 
-void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds, uint8_t esHoraVerano);
-void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds);
-void completeYdayWday(struct tm *tim);
 uint8_t dayofweek(uint16_t y, uint16_t m, uint16_t d);
 void printSerial(const char *msg);
 void printSerialCPP(const char *msg);

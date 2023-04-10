@@ -20,4 +20,16 @@ void initW25q16(void);
 void leeHora(void);
 void estadoDeseadoPuerta(uint8_t *estDes, uint16_t *sec2change);
 
+void initSerial(void);
+void leeGPS(void);
+void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
+void leeVariablesC(void);
+void printFechaC(char *buff, uint16_t longBuff);
+void addDsC(int16_t dsAdd);
+void printSerial(char *msg);
+void opciones(void);
+void cierraPuertaC(void);
+void abrePuertaC(void);
+void calibraConGPS(void);
+
 #endif /* ALIMCALLE_H_ */

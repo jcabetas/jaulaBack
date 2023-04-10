@@ -22,7 +22,7 @@ extern "C"
 }
 
 void printSerialCPP(const char *msg);
-void initTimer(void);
+void calibraConGPS(void);
 
 /*
  * Para leer hora:
@@ -38,7 +38,7 @@ extern int16_t dsAddPordia;
 uint8_t hayGps;
 uint8_t llamadasAGPS = 0;
 uint8_t estadoAjusteGps = 0;
-struct fechaHora fechHoraInitGps;
+struct fechaHora fechHoraOldGps;
 
 
 /*
@@ -68,9 +68,7 @@ time_t secLecInicial;
 
 uint8_t ajustaHora(char *horaStr,char *fechaStr)
 {
-    struct tm tmGPS, tmRTC;
-    struct fechaHora fechaHoraRTC;
-    char buff[100];
+    struct tm tmGPS;
     if (strlen(horaStr)<6 || strlen(fechaStr)<6)
         return 0;
     tmGPS.tm_year = atoi(&fechaStr[4])+100;
@@ -90,57 +88,13 @@ uint8_t ajustaHora(char *horaStr,char *fechaStr)
     tmGPS.tm_isdst = 0;
     calendar::completeYdayWday(&tmGPS);
     // tengo la fecha actual, procesala
+    calendar::rtcSetFecha(&tmGPS, ds);
+    calendar::getFechaHora(&fechHoraOldGps);
+    printSerialCPP("En ajustaHora, he ajustado RTC\n\r");
+    calendar::vuelcaFecha();
+    printSerialCPP("\n\r");
     if (estadoAjusteGps==0)
-    {
-        // esta es la lectura inicial
-        calendar::rtcSetFecha(&tmGPS, ds);
-        calendar::getFechaHora(&fechHoraInitGps);
-        printSerialCPP("En ajustaHora, he ajustado RTC\n\r");
-        calendar::vuelcaFecha();
-        printSerialCPP("\n\r");
         estadoAjusteGps = 1;
-    }
-    else if (estadoAjusteGps==1)
-    {
-        // leo fecha actual para ver desfase
-        calendar::rtcGetFecha();
-        uint32_t dsDiffInit = calendar::dsDiff(&fechHoraInitGps);
-        chsnprintf(buff,sizeof(buff),"En AjustaHora, han pasado %d ds desde ajuste inicial\n\r",dsDiffInit);
-        printSerialCPP(buff);
-        if (dsDiffInit<864000L)
-        {
-            printSerialCPP("Todavia no ha pasado un dia, no hago reajuste\n\r");
-            return 1;
-        }
-        // mas de un dia de tiempo entre lecturas, haz ajustes
-        time_t secsGPS = calendar::getSecUnix(&tmGPS);
-        calendar::getFechaHora(&fechaHoraRTC);
-        calendar::gettm(&tmRTC);
-        // pongo bien la fecha
-        calendar::rtcSetFecha(&tmGPS, ds);
-        // hallo desajuste RTC
-        int32_t dsError = 10L*(fechaHoraRTC.secsUnix - secsGPS) + fechaHoraRTC.dsUnix;
-        int16_t dsPorDia = (int16_t)((dsError*864000L)/dsDiffInit);
-        dsAddPordia = -dsPorDia;
-        escribeVariables();
-        chsnprintf(buff,sizeof(buff),"En AjustaHora, GPS da %d:%d:%d y RTC:%d%d:%d\n\r",
-                   tmGPS.tm_hour,tmGPS.tm_min,tmGPS.tm_sec, tmRTC.tm_hour,tmRTC.tm_min,tmRTC.tm_sec);
-        printSerialCPP(buff);
-        chsnprintf(buff,sizeof(buff),"=> dsError: %d   dsPorDia:%d  dsAddPordia:%d\n\r",
-                   dsError, dsPorDia, dsAddPordia);
-        printSerialCPP(buff);
-        estadoAjusteGps = 2;
-    }
-    else
-    {
-        // lectura periodica
-        calendar::rtcSetFecha(&tmGPS, ds);
-        calendar::getFechaHora(&fechHoraInitGps);
-        printSerialCPP("En ajustaHora, he reajustado RTC\n\r");
-        calendar::vuelcaFecha();
-        printSerialCPP("\n\r");
-        estadoAjusteGps = 3;
-    }
     return 1;
 }
 
@@ -194,9 +148,16 @@ void leeGPS(void)
     uint16_t numParam;
     char buffer[100];
 
-    if (!hayGps || (estadoAjusteGps==3 && (++llamadasAGPS)<60))
+    if (!hayGps)
         return;
-    llamadasAGPS = 0;
+    // procede leer GPS si:
+    // - No se ha leido nunca (estadoAjusteGps==0)
+    // - Ha pasado una semana sin leerse
+    // - no hay calibracion RTC (dsAddPordia==0)
+    calendar::rtcGetFecha();
+    uint32_t sDiffInit = calendar::sDiff(&fechHoraOldGps);
+    if (estadoAjusteGps!=0 && sDiffInit<604800L && dsAddPordia!=0)
+        return;
     printSerialCPP("Leo GPS...\n\r");
     palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
     palClearPad(GPIOB, GPIOB_ONGPS);
@@ -244,7 +205,7 @@ void leeGPS(void)
     }
     if (hayGps && dsAddPordia==0)
     {
-        initTimer();
+        calibraConGPS();
     }
     palSetPad(GPIOB, GPIOB_ONGPS);
     sdStop(&SD1);

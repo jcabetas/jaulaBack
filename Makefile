@@ -131,7 +131,7 @@ CSRC = $(ALLCSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(ALLCPPSRC) sensor.cpp calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp serial.cpp \
+CPPSRC = $(ALLCPPSRC) calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp serial.cpp \
  					  w25q16/w25q16.cpp w25q16/variables.cpp  servoPWM.cpp  ADC/adcUtils.cpp timer.cpp
 #        \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
