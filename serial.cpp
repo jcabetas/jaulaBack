@@ -191,7 +191,6 @@ void ajustaAddMinutos(void)
             {
                 addAmanecer = addMin;
                 escribeVariables();
-                calendar::iniciaSecAdaptacion();
             }
         }
         if (result==0 && opcion==2)
@@ -202,7 +201,6 @@ void ajustaAddMinutos(void)
             {
                 addAtardecer = addMin;
                 escribeVariables();
-                calendar::iniciaSecAdaptacion();
             }
         }
     }
@@ -233,7 +231,6 @@ void ajustaHora(void)
     if (result==2)
         return;
     ajustaHoraDetallada(ano, mes, dia, hora, min, sec);
-    calendar::iniciaSecAdaptacion();
     calendar::printFecha(buff,sizeof(buff));
     chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
 }
