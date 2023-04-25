@@ -231,6 +231,10 @@ uint8_t calendar::getDOW(void)
     return fechaNow.tm_wday;
 }
 
+uint16_t calendar::getmdayActualizada(void)
+{
+  return mdayActualizada;
+}
 
 
 /*
