@@ -31,5 +31,6 @@ void opciones(void);
 void cierraPuertaC(void);
 void abrePuertaC(void);
 void calibraConGPS(void);
+void ajustaCALMP_C(int16_t dsDia);
 
 #endif /* ALIMCALLE_H_ */

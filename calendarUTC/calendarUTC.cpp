@@ -30,7 +30,6 @@ uint16_t calendar::minAnochecer = 1194;
 uint16_t calendar::diaCalculado = 9999;
 float calendar::longitudRad = -0.0697766927f; //  -3.99791
 float calendar::latitudRad = 0.7058975433f;   //  40.44495
-uint16_t calendar::mdayActualizada = 99;
 struct fechaHora calendar::fechaHoraNow = {0,0};
 struct tm calendar::fechaNow = {0,0,0,0,0,0,0,0,0};
 
@@ -40,7 +39,6 @@ extern "C"
     void printFechaC(char *buff, uint16_t longBuff);
     void actualizaAmanAnoch(void);
     void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change);
-    void addDsC(int16_t dsAdd);
     void iniciaSecAdaptacionC(void);
 }
 
@@ -157,7 +155,6 @@ void calendar::rtcSetFecha(struct tm *fecha, uint16_t ds)
     fechaHoraNow.dsUnix = ds;
     rtcSetTM(&RTCD1, fecha, ds);
     rtcGetFecha();
-    mdayActualizada = fechaNow.tm_mday; // marcamos el dia como ya adaptado
 }
 
 void calendar::cambiaFecha(uint16_t *anyo, uint8_t *mes, uint8_t *dia, uint8_t *hora, uint8_t *min, uint8_t *seg, uint8_t *dsPar)
@@ -232,10 +229,6 @@ uint8_t calendar::getDOW(void)
     return fechaNow.tm_wday;
 }
 
-uint16_t calendar::getmdayActualizada(void)
-{
-  return mdayActualizada;
-}
 
 
 /*
@@ -277,35 +270,6 @@ uint32_t calendar::sDiff(struct fechaHora *fechHoraOld)
 }
 
 
-
-// anade ds a RTC. No llamar a la medianoche
-void calendar::addDs(int16_t dsAdd)  {
-  struct tm tim;
-  uint16_t ds;
-  uint32_t dsTotal;
-  // lee la hora
-  rtcGetTM(&RTCD1, &tim, &ds);
-  // si no hay que hacer nada, vuelve
-  if (dsAdd==0 || dsAdd>600 || dsAdd<-600)
-    return;
-  // estaba ya actualizada?
-  if (tim.tm_mday == mdayActualizada)
-      return;
-  dsTotal = 36000L*tim.tm_hour + 600L*tim.tm_min + 10L*tim.tm_sec + ds + dsAdd;
-  // actualizo hora
-  tim.tm_hour = dsTotal/36000L;
-  dsTotal = dsTotal - tim.tm_hour*36000L;
-  tim.tm_min = dsTotal/600L;
-  dsTotal = dsTotal - tim.tm_min*600L;
-  tim.tm_sec = dsTotal/10L;
-  ds = dsTotal - tim.tm_sec*10L;
-  // escribo nueva hora
-  rtcSetTM(&RTCD1, &tim, ds);
-  mdayActualizada = tim.tm_mday;
-}
-
-
-
 uint8_t calendar::esDeNoche(void)
 {
     uint16_t minutosNow;
@@ -329,7 +293,7 @@ void calendar::printHoras(char *buff, uint16_t longBuff)
 
 void calendar::printFecha(char *buff, uint16_t longBuff)
 {
-    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d adaptado dia %d",fechaNow.tm_mday,fechaNow.tm_mon+1,fechaNow.tm_year-100,fechaNow.tm_hour,fechaNow.tm_min,fechaNow.tm_sec, mdayActualizada);
+    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",fechaNow.tm_mday,fechaNow.tm_mon+1,fechaNow.tm_year-100,fechaNow.tm_hour,fechaNow.tm_min,fechaNow.tm_sec);
 }
 
 
@@ -416,10 +380,6 @@ void calendar::estadoDeseadoPuerta(uint8_t *estDes, uint32_t *sec2change)
     }
 }
 
-void addDsC(int16_t dsAdd)
-{
-  calendar::addDs(dsAdd);
-}
 
 void estadoDeseadoPuertaC(uint8_t *estDes, uint32_t *sec2change)
 {

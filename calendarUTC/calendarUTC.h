@@ -28,7 +28,6 @@ private:
     static struct tm fechaNow;
     static float latitudRad, longitudRad;
     static uint16_t diaCalculado;
-    static uint16_t mdayActualizada;
 public:
     // funciones necesarias para leer y ajustar fechas
     static void completeYdayWday(struct tm *tim);
@@ -45,7 +44,6 @@ public:
     static void gettm(struct tm *fecha);
     static void getFechaHora(struct fechaHora *fechaHora);
     static uint8_t getDOW(void);
-    static uint16_t getmdayActualizada(void);
     // funciones auxiliares
     static void iniciaSecAdaptacion(void);
     static uint32_t dsDiff(struct fechaHora *fechHoraOld);

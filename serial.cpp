@@ -33,6 +33,7 @@ void mueveServoPos(uint16_t porcPosicion, uint16_t ms);
 void leeTension(float *vBat);
 bool tensionCritica(void);
 float hallaCapBat(float *vBat);
+void ajustaCALMP(int16_t dsDia);
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -240,34 +241,25 @@ void ajustaDsAdd(void)
     int16_t result;
     int16_t opcion;
     int16_t dsAdd;
-    char buff[80];
     while (1==1)
     {
         chprintf((BaseSequentialStream *)&SD2,"Decimas de segundo dia adicionales: %d\n\r",dsAddPordia);
         chprintf((BaseSequentialStream *)&SD2,"1 Nuevo valor\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"2 Aplica correccion ahora\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"3 Salir\n\r");
-        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
+        chprintf((BaseSequentialStream *)&SD2,"2 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 2);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        if (result==2 || (result==0 && opcion==3))
+        if (result==2 || (result==0 && opcion==2))
             return;
         if (result==0 && opcion==1)
         {
             dsAdd = dsAddPordia;
-            result = preguntaNumero((BaseChannel *)&SD2, "Decimas de segundo adicionales/dia", &dsAdd, -600, 600);
+            result = preguntaNumero((BaseChannel *)&SD2, "Decimas de segundo adicionales/dia", &dsAdd, -400, 400);
             if (result == 0)
             {
                 dsAddPordia = dsAdd;
                 escribeVariables();
+                ajustaCALMP(dsAddPordia);
             }
-        }
-        if (result==0 && opcion==2)
-        {
-            calendar::printFecha(buff,sizeof(buff));
-            chprintf((BaseSequentialStream *)&SD2,"Fecha UTC antes cambio: %s\n\r",buff);
-            calendar::addDs(dsAddPordia);
-            calendar::printFecha(buff,sizeof(buff));
-            chprintf((BaseSequentialStream *)&SD2,"Fecha UTC despues del cambio: %s\n\r",buff);
         }
     }
 }
@@ -330,7 +322,7 @@ void opciones(void)
         chprintf((BaseSequentialStream *)&SD2,"sec. actual:%d, prox. cambio:%d, estado puerta:%d:%s\n\r",secActual, sec2change, estDes,estPuertaStr[estDes]);
         chprintf((BaseSequentialStream *)&SD2,"Minutos adicionales amanecer: %d atardecer: %d  secAdaptacion:%d (diaAdapt:%d)\n\r",addAmanecer, addAtardecer, secAdaptacion, diaAdaptado);
         chprintf((BaseSequentialStream *)&SD2,"Automatizacion de puerta: %d:%s\n\r",autoPuerta, estPuertaAutoStr[autoPuerta]);
-        chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia Actualizado en dia %d\n\r",dsAddPordia,calendar::getmdayActualizada());
+        chprintf((BaseSequentialStream *)&SD2,"Correccion diaria de hora: %d ds/dia\n\r",dsAddPordia);
         chprintf((BaseSequentialStream *)&SD2,"Posicion servo abierto: %d, cerrado: %d\n\r\n\r",posAbierto, posCerrado);
 
         chprintf((BaseSequentialStream *)&SD2,"1 Ajusta fecha y hora\n\r");

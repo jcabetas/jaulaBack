@@ -26,6 +26,7 @@ extern int16_t dsAddPordia;
 bool yaEsta;
 
 void printSerialCPP(const char *msg);
+void ajustaCALMP(int16_t dsDia);
 
 
 static void gps_pulse(void *)
@@ -109,6 +110,7 @@ void calibraConGPS(void)
         printSerialCPP(buff);
         dsAddPordia = -10.0f*secPorDia;
         escribeVariables();
+        ajustaCALMP(dsAddPordia);
     }
     else
         printSerialCPP("No detecto pulsos de GPS, no puedo ajustar desvio de RTC\n\r");

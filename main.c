@@ -82,6 +82,7 @@ int main(void) {
     initSerial();
     parpadear(2, 250);
     leeVariablesC();
+    ajustaCALMP_C(dsAddPordia);
     if (autoPuerta != 3)
         secAdaptacion = 0;
     hayGps = 1; // supongo que hay GPS
@@ -106,7 +107,6 @@ int main(void) {
         printSerial(buffer);
         ports_set_lowpower();
         stop(sec2change);
-        addDsC(dsAddPordia);
         if (GL_Flag_External_WakeUp == 0) {
             parpadear(1, 100);
             printSerial("Timeout desde stop\n\r");

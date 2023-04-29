@@ -69,6 +69,7 @@ using namespace chibios_rt;
 
 extern "C" {
     void checkRTC(void);
+    void ajustaCALMP_C(int16_t dsDia);
 }
 
 
@@ -228,6 +229,9 @@ void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds)  {
   sts = osalSysGetStatusAndLockX();
 
   /* Writing the registers.*/
+  RTCD1.rtc->WPR = 0xCA;
+  RTCD1.rtc->WPR = 0x53;
+
   rtc_enter_init(&RTCD1);
   rtcp->rtc->TR = tr;
   rtcp->rtc->DR = dr;
@@ -236,6 +240,7 @@ void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds)  {
                   (tim->tm_isdst << RTC_CR_BKP_OFFSET);
 
   rtc_exit_init(&RTCD1);
+  RTCD1.rtc->WPR = 0xFF;
 
   /* Leaving a reentrant critical zone.*/
   osalSysRestoreStatusX(sts);
@@ -321,6 +326,31 @@ void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds) {
 ////  dsec %= 10;
 ////  *ds = dsec;
 //}
+void ajustaCALMP(int16_t dsDia)
+{
+    // hay que calcular cuantos pulsos hay que enmascarar dsDia/864000*32768*32
+    if (dsDia>400 || dsDia<-400 || dsDia==0)
+        return;
+    int16_t pulsos2mask = (int16_t)((dsDia*4096L)/3375L);
+    RTCD1.rtc->WPR = 0xCA;       // Disable write protection
+    RTCD1.rtc->WPR = 0x53;
+    if (dsDia>0) // hay que anyadir pulsos, CALP es 1
+    {
+        RTCD1.rtc->CALR |= RTC_CALR_CALP;
+        RTCD1.rtc->CALR |= (512 - pulsos2mask);
+    }
+    else
+    {
+        RTCD1.rtc->CALR  &= ~RTC_CALR_CALP;
+        RTCD1.rtc->CALR |= -pulsos2mask;
+    }
+    RTCD1.rtc->WPR = 0xBB;       // enable write protection
+}
+
+void ajustaCALMP_C(int16_t dsDia)
+{
+    ajustaCALMP(dsDia);
+}
 
 void checkRTC(void)
 {
