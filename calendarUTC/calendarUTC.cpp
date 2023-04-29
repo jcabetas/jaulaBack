@@ -157,6 +157,7 @@ void calendar::rtcSetFecha(struct tm *fecha, uint16_t ds)
     fechaHoraNow.dsUnix = ds;
     rtcSetTM(&RTCD1, fecha, ds);
     rtcGetFecha();
+    mdayActualizada = fechaNow.tm_mday; // marcamos el dia como ya adaptado
 }
 
 void calendar::cambiaFecha(uint16_t *anyo, uint8_t *mes, uint8_t *dia, uint8_t *hora, uint8_t *min, uint8_t *seg, uint8_t *dsPar)
@@ -328,7 +329,7 @@ void calendar::printHoras(char *buff, uint16_t longBuff)
 
 void calendar::printFecha(char *buff, uint16_t longBuff)
 {
-    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d",fechaNow.tm_mday,fechaNow.tm_mon+1,fechaNow.tm_year-100,fechaNow.tm_hour,fechaNow.tm_min,fechaNow.tm_sec);
+    chsnprintf(buff,longBuff,"%d/%d/%d %d:%d:%d adaptado dia %d",fechaNow.tm_mday,fechaNow.tm_mon+1,fechaNow.tm_year-100,fechaNow.tm_hour,fechaNow.tm_min,fechaNow.tm_sec, mdayActualizada);
 }
 
 
