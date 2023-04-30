@@ -22,7 +22,7 @@ extern "C"
 }
 
 void printSerialCPP(const char *msg);
-void calibraConGPS(void);
+void calibraConGPS(uint8_t soloCheck);
 
 /*
  * Para leer hora:
@@ -186,7 +186,10 @@ void leeGPS(void)
     if (estadoAjusteGps!=0 && sDiffInit<604800L && dsAddPordia!=0)
         return;
     if (!startGPS())
+    {
+        stopGPS();
         return;
+    }
     //
     while (true)
     {
@@ -216,7 +219,7 @@ void leeGPS(void)
     }
     if (hayGps && dsAddPordia==0)
     {
-        calibraConGPS();
+        calibraConGPS(0);
     }
     stopGPS();
 }

@@ -61,7 +61,7 @@ static void gps_pulse(void *)
     }
 }
 
-void calibraConGPS(void)
+void calibraConGPS(uint8_t soloCheck)
 {
     uint16_t secsEspera;
     char buff[60];
@@ -72,7 +72,8 @@ void calibraConGPS(void)
     // Segun https://ucilnica.fri.uni-lj.si/pluginfile.php/182326/mod_resource/content/0/Using%20the%20hardware%20real-time%20clock%20%28RTC%29.pdf
     // PREDIV_A[5] must be set to 1 to enable the RTC_CALIB output signal generation. If PREDIV_A[5] = 0, no signal is output on RTC_CALIB
     // Por tanto, en RTCv2 cambio STM32_RTC_PRESA_VALUE a 128 y STM32_RTC_PRESS_VALUE a 256
-    ajustaCALMP(0);
+    if (!soloCheck)
+        ajustaCALMP(0);
     palSetPadMode(GPIOA, GPIOA_PIN15, PAL_MODE_ALTERNATE(1));
     palSetPadMode(GPIOA, GPIOA_PULSOSGPS,  PAL_MODE_INPUT);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection
@@ -120,13 +121,17 @@ void calibraConGPS(void)
         secPorDia = (contadorFin/((float) (numPulsos-1.0f))/512.0f-1.0f)*86400.0f;
         chsnprintf(buff,sizeof(buff),"Resultado secDia:%.1f\n\r", secPorDia);
         printSerialCPP(buff);
-        dsAddPordia = -10.0f*secPorDia;
-        escribeVariables();
+        if (!soloCheck)
+        {
+            dsAddPordia = -10.0f*secPorDia;
+            escribeVariables();
+        }
     }
     else
         printSerialCPP("No detecto pulsos de GPS, no puedo ajustar desvio de RTC\n\r");
     // pongo ajuste fino otra vez, con lo nuevo o lo antiguo si no ha cambiado
-    ajustaCALMP(dsAddPordia);
+    if (!soloCheck)
+        ajustaCALMP(dsAddPordia);
     palDisableLineEvent(LINE_A9_PULSOSGPS);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection
     RTCD1.rtc->WPR = 0x53;
