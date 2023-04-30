@@ -19,7 +19,7 @@
 
 #define NUMPULSOS 1000
 
-uint16_t numPulsos;
+uint16_t numPulsos, pulsosMAX;
 uint32_t contadorIni, contadorFin, contadorOld;
 float secPorDia;
 extern int16_t dsAddPordia;
@@ -40,7 +40,7 @@ static void gps_pulse(void *)
         numPulsos++;
         return;
     }
-    if (numPulsos++ == NUMPULSOS)
+    if (numPulsos++ == pulsosMAX)
     {
         contadorFin = contActual;
         yaEsta = true;
@@ -72,8 +72,13 @@ void calibraConGPS(uint8_t soloCheck)
     // Segun https://ucilnica.fri.uni-lj.si/pluginfile.php/182326/mod_resource/content/0/Using%20the%20hardware%20real-time%20clock%20%28RTC%29.pdf
     // PREDIV_A[5] must be set to 1 to enable the RTC_CALIB output signal generation. If PREDIV_A[5] = 0, no signal is output on RTC_CALIB
     // Por tanto, en RTCv2 cambio STM32_RTC_PRESA_VALUE a 128 y STM32_RTC_PRESS_VALUE a 256
-    if (!soloCheck)
+    if (soloCheck)
+        pulsosMAX = 120;
+    else
+    {
         ajustaCALMP(0);
+        pulsosMAX = NUMPULSOS;
+    }
     palSetPadMode(GPIOA, GPIOA_PIN15, PAL_MODE_ALTERNATE(1));
     palSetPadMode(GPIOA, GPIOA_PULSOSGPS,  PAL_MODE_INPUT);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection
@@ -94,6 +99,8 @@ void calibraConGPS(uint8_t soloCheck)
     secsEspera = 0;
     palEnableLineEvent(LINE_A9_PULSOSGPS, PAL_EVENT_MODE_RISING_EDGE);//PAL_EVENT_MODE_RISING_EDGE);
     palSetLineCallback(LINE_A9_PULSOSGPS, gps_pulse, NULL);
+    chsnprintf(buff,sizeof(buff),"Arranco con CALR:%d soloCheck:%d\n\r", RTCD1.rtc->CALR, soloCheck);
+    printSerialCPP(buff);
     while(!yaEsta && secsEspera<60)
     {
         if (numPulsos==0)

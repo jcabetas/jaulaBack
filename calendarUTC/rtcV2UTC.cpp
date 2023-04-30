@@ -5,7 +5,7 @@ using namespace chibios_rt;
 #include "../calendarUTC/calendarUTC.h"
 #include "gets.h"
 #include "stdlib.h"
-
+#include "chprintf.h"
 /*
   La hora UTC en España:
   - Durante los siete meses que dura el horario de primavera-verano, España está en la zona UTC +2
@@ -71,6 +71,7 @@ extern "C" {
     void checkRTC(void);
     void ajustaCALMP_C(int16_t dsDia);
 }
+void printSerialCPP(const char *msg);
 
 
 /*
@@ -330,6 +331,7 @@ void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds) {
 
 void ajustaCALMP(int16_t dsDia)
 {
+    char buff[100];
     // hay que calcular cuantos pulsos hay que enmascarar dsDia/864000*32768*32
     if (dsDia>400 || dsDia<-400)
         return;
@@ -346,7 +348,10 @@ void ajustaCALMP(int16_t dsDia)
         RTCD1.rtc->CALR  &= ~RTC_CALR_CALP;
         RTCD1.rtc->CALR |= -pulsos2mask;
     }
+
     RTCD1.rtc->WPR = 0xBB;       // enable write protection
+    chsnprintf(buff,sizeof(buff),"En ajustaCALMP(%d).. CALR:%d\n\r", dsDia, RTCD1.rtc->CALR);
+    printSerialCPP(buff);
 }
 
 void ajustaCALMP_C(int16_t dsDia)

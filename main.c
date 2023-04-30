@@ -89,10 +89,10 @@ int main(void) {
     printSerial("Inicializado\n\r");
     while (1 == 1) {
         leeVariablesC();
-//        leeGPS();
+        leeGPS();
         leeHora();
         printFechaC(buff, sizeof(buff));
-        chsnprintf(buffer, sizeof(buffer), "Fecha actual UTC: %s\n\r", buff);
+        chsnprintf(buffer, sizeof(buffer), "Fecha actual UTC: %s  CALR:%d\n\r", buff, RTCD1.rtc->CALR);
         printSerial(buffer);
         estadoDeseadoPuertaC(&estDes, &sec2change);
         chsnprintf(buffer, sizeof(buffer),
@@ -105,7 +105,7 @@ int main(void) {
             cierraPuertaC();
         chsnprintf(buffer, sizeof(buffer), "A dormir %d s\n\r", sec2change);
         printSerial(buffer);
-        //ports_set_lowpower();
+        ports_set_lowpower();
         stop(sec2change);
         if (GL_Flag_External_WakeUp == 0) {
             parpadear(1, 100);
