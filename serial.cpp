@@ -34,6 +34,11 @@ void leeTension(float *vBat);
 bool tensionCritica(void);
 float hallaCapBat(float *vBat);
 void ajustaCALMP(int16_t dsDia);
+uint8_t startGPS(void);
+void calibraConGPS(void);
+uint8_t stopGPS(void);
+
+extern uint8_t hayGps;
 
 extern int16_t addAmanecer;
 extern int16_t addAtardecer;
@@ -244,11 +249,12 @@ void ajustaDsAdd(void)
     while (1==1)
     {
         chprintf((BaseSequentialStream *)&SD2,"Decimas de segundo dia adicionales: %d\n\r",dsAddPordia);
-        chprintf((BaseSequentialStream *)&SD2,"1 Nuevo valor\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"2 Salir\n\r");
-        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 2);
+        chprintf((BaseSequentialStream *)&SD2,"1 Nuevo valor a mano\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"2 Usar pulsos GPS\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"3 Salir\n\r");
+        result = preguntaNumero((BaseChannel *)&SD2, "Dime opcion", &opcion, 1, 3);
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        if (result==2 || (result==0 && opcion==2))
+        if (result==2 || (result==0 && opcion==3))
             return;
         if (result==0 && opcion==1)
         {
@@ -260,6 +266,14 @@ void ajustaDsAdd(void)
                 escribeVariables();
                 ajustaCALMP(dsAddPordia);
             }
+        }
+        if (result==0 && opcion==2)
+        {
+            startGPS();
+            calibraConGPS();
+            stopGPS();
+            if (SD2.state==SD_STOP) // se ha usado printSerialCPP(), que cierra SD2
+                initSerial();
         }
     }
 }

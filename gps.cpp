@@ -139,14 +139,41 @@ void setPos(char *latStr, char *NS, char *longStr, char *EW)
     calendar::setLatLong(latDegree,longDegree);
 }
 
+uint8_t startGPS(void)
+{
+    char buffer[100];
+    uint8_t huboTimeout;
+    printSerialCPP("Conecto GPS...\n\r");
+    palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
+    palClearPad(GPIOB, GPIOB_ONGPS);
+    palSetPad(GPIOA, GPIOA_RX1);
+    palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
+    sdStart(&SD1, &ser_cfg);
+    chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(2000), &huboTimeout);
+    if (huboTimeout)
+    {
+        hayGps = 0;
+        printSerialCPP("No hay GPS\n\r");
+        return 0;
+    }
+    return 1;
+}
+
+void stopGPS(void)
+{
+    palSetPad(GPIOB, GPIOB_ONGPS);
+    sdStop(&SD1);
+    palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
+}
+
 // devuelve 1 si hay GPS y consigue hora
 void leeGPS(void)
 {
+    char buffer[100];
     uint8_t huboTimeout;
     char *parametros[30];
     uint16_t dsEsperandoHora = 0;
     uint16_t numParam;
-    char buffer[100];
 
     if (!hayGps)
         return;
@@ -158,59 +185,40 @@ void leeGPS(void)
     uint32_t sDiffInit = calendar::sDiff(&fechHoraOldGps);
     if (estadoAjusteGps!=0 && sDiffInit<604800L && dsAddPordia!=0)
         return;
-    printSerialCPP("Leo GPS...\n\r");
-    palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
-    palClearPad(GPIOB, GPIOB_ONGPS);
-    palClearPad(GPIOA, GPIOA_TX1);
-    palSetPad(GPIOA, GPIOA_RX1);
-    palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_ALTERNATE(7));
-    palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
-    sdStart(&SD1, &ser_cfg);
-
-    chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(2000), &huboTimeout);
-    if (huboTimeout)
+    if (!startGPS())
+        return;
+    //
+    while (true)
     {
-        hayGps = 0;
-        printSerialCPP("No hay GPS\n\r");
-    }
-    else
-    {
-        while (true)
+        if (++dsEsperandoHora>900)
         {
-            if (++dsEsperandoHora>900)
+            hayGps = 0;
+            printSerialCPP("Demasiado tiempo esperando la hora en GPS\n\r");
+            break;
+        }
+        chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(100), &huboTimeout);
+        if (huboTimeout)
+            continue;
+        parseStr(buffer,parametros, ",",&numParam);
+        if (numParam<5)
+            continue;
+        // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
+        // => 08:21:26 Z  06/10/22
+        // aunque no tengamos ubicacion, compruebo la hora
+        if (numParam>10 && !strncmp("$GPRMC",parametros[0],10))
+        {
+            if (ajustaHora(parametros[1],parametros[9]))
             {
-                hayGps = 0;
-                printSerialCPP("Demasiado tiempo esperando la hora en GPS\n\r");
+                hayGps = 1;
                 break;
             }
-            chgetsNoEchoTimeOut((BaseChannel *)&SD1, (uint8_t *) buffer,sizeof(buffer), TIME_MS2I(100), &huboTimeout);
-            if (huboTimeout)
-                continue;
-            parseStr(buffer,parametros, ",",&numParam);
-            if (numParam<5)
-                continue;
-            // $GPRMC,082126.00,A,4023.11591,N,00421.89349,W,0.047,,061022,,,A*69
-            // => 08:21:26 Z  06/10/22
-            // aunque no tengamos ubicacion, compruebo la hora
-            if (numParam>10 && !strncmp("$GPRMC",parametros[0],10))
-            {
-                if (ajustaHora(parametros[1],parametros[9]))
-                {
-                    hayGps = 1;
-                    break;
-                }
-            }
-
         }
     }
     if (hayGps && dsAddPordia==0)
     {
         calibraConGPS();
     }
-    palSetPad(GPIOB, GPIOB_ONGPS);
-    sdStop(&SD1);
-    palSetPadMode(GPIOA, GPIOA_TX1, PAL_MODE_INPUT_ANALOG);
-    palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
+    stopGPS();
 }
 
 

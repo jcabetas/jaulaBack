@@ -326,10 +326,12 @@ void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds) {
 ////  dsec %= 10;
 ////  *ds = dsec;
 //}
+
+
 void ajustaCALMP(int16_t dsDia)
 {
     // hay que calcular cuantos pulsos hay que enmascarar dsDia/864000*32768*32
-    if (dsDia>400 || dsDia<-400 || dsDia==0)
+    if (dsDia>400 || dsDia<-400)
         return;
     int16_t pulsos2mask = (int16_t)((dsDia*4096L)/3375L);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection

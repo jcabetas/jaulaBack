@@ -65,14 +65,16 @@ void calibraConGPS(void)
 {
     uint16_t secsEspera;
     char buff[60];
+    // quito calibracion fina del RTC, para ver desvio de verdad
     // configuro RTC para que saque oscilador por RTC_OUT (PC13)
     // conectar RTC_OUT (PC13) a trigger TIM2 TIM2_ETR (PA15)
-    // conectar pulsos GPS a PA1
+    // conectar pulsos GPS a PA2
     // Segun https://ucilnica.fri.uni-lj.si/pluginfile.php/182326/mod_resource/content/0/Using%20the%20hardware%20real-time%20clock%20%28RTC%29.pdf
     // PREDIV_A[5] must be set to 1 to enable the RTC_CALIB output signal generation. If PREDIV_A[5] = 0, no signal is output on RTC_CALIB
     // Por tanto, en RTCv2 cambio STM32_RTC_PRESA_VALUE a 128 y STM32_RTC_PRESS_VALUE a 256
+    ajustaCALMP(0);
     palSetPadMode(GPIOA, GPIOA_PIN15, PAL_MODE_ALTERNATE(1));
-    palSetPadMode(GPIOA, GPIOA_SENS2,  PAL_MODE_INPUT);
+    palSetPadMode(GPIOA, GPIOA_PULSOSGPS,  PAL_MODE_INPUT);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection
     RTCD1.rtc->WPR = 0x53;
     RTCD1.rtc->CR = RTC_CR_COE;  // Calibration output enable
@@ -89,20 +91,30 @@ void calibraConGPS(void)
     yaEsta = false;
     numPulsos = 0;
     secsEspera = 0;
-    palEnableLineEvent(LINE_A1_SENS1, PAL_EVENT_MODE_RISING_EDGE);//PAL_EVENT_MODE_RISING_EDGE);
-    palSetLineCallback(LINE_A1_SENS1, gps_pulse, NULL);
+    palEnableLineEvent(LINE_A9_PULSOSGPS, PAL_EVENT_MODE_RISING_EDGE);//PAL_EVENT_MODE_RISING_EDGE);
+    palSetLineCallback(LINE_A9_PULSOSGPS, gps_pulse, NULL);
     while(!yaEsta && secsEspera<60)
     {
         if (numPulsos==0)
+        {
             secsEspera++;
+            if (secsEspera%5 == 0)
+            {
+                chsnprintf(buff,sizeof(buff),"Esperando pulsos GPS por %d s\r", secsEspera);
+                printSerialCPP(buff);
+            }
+        }
+        if (numPulsos==1)
+            printSerialCPP("\n\rDetectado pulso\n\r");
         chThdSleepMilliseconds(1000);
         if (numPulsos>10 && (numPulsos%10)==0)
         {
             secPorDia = (contadorOld/((float) (numPulsos-1.0f))/512.0f-1.0f)*86400.0f;
-            chsnprintf(buff,sizeof(buff),"Con %d pulsos, secDia:%.1f\n\r", numPulsos, secPorDia);
+            chsnprintf(buff,sizeof(buff),"Con %d pulsos, secDia:%.1f\r", numPulsos, secPorDia);
             printSerialCPP(buff);
         }
     }
+    printSerialCPP("\n\r");
     if (yaEsta)
     {
         secPorDia = (contadorFin/((float) (numPulsos-1.0f))/512.0f-1.0f)*86400.0f;
@@ -110,11 +122,12 @@ void calibraConGPS(void)
         printSerialCPP(buff);
         dsAddPordia = -10.0f*secPorDia;
         escribeVariables();
-        ajustaCALMP(dsAddPordia);
     }
     else
         printSerialCPP("No detecto pulsos de GPS, no puedo ajustar desvio de RTC\n\r");
-    palDisableLineEvent(LINE_A1_SENS1);
+    // pongo ajuste fino otra vez, con lo nuevo o lo antiguo si no ha cambiado
+    ajustaCALMP(dsAddPordia);
+    palDisableLineEvent(LINE_A9_PULSOSGPS);
     RTCD1.rtc->WPR = 0xCA;       // Disable write protection
     RTCD1.rtc->WPR = 0x53;
     RTCD1.rtc->CR &= ~RTC_CR_COE;  // Calibration output disable
@@ -124,5 +137,5 @@ void calibraConGPS(void)
     RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
     rccResetTIM2();
     palSetPadMode(GPIOA, GPIOA_PIN15, PAL_MODE_INPUT_ANALOG);
-    palSetPadMode(GPIOA, GPIOA_SENS2, PAL_MODE_INPUT_ANALOG);
+    palSetPadMode(GPIOA, GPIOA_PULSOSGPS, PAL_MODE_INPUT_ANALOG);
 }
