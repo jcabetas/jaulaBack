@@ -73,7 +73,7 @@ void calibraConGPS(uint8_t soloCheck)
     // PREDIV_A[5] must be set to 1 to enable the RTC_CALIB output signal generation. If PREDIV_A[5] = 0, no signal is output on RTC_CALIB
     // Por tanto, en RTCv2 cambio STM32_RTC_PRESA_VALUE a 128 y STM32_RTC_PRESS_VALUE a 256
     if (soloCheck)
-        pulsosMAX = 120;
+        pulsosMAX = 32;
     else
     {
         ajustaCALMP(0);
@@ -118,7 +118,7 @@ void calibraConGPS(uint8_t soloCheck)
         if (numPulsos>10 && (numPulsos%10)==0)
         {
             secPorDia = (contadorOld/((float) (numPulsos-1.0f))/512.0f-1.0f)*86400.0f;
-            chsnprintf(buff,sizeof(buff),"Con %d pulsos, secDia:%.1f\r", numPulsos, secPorDia);
+            chsnprintf(buff,sizeof(buff),"Con %d/%d pulsos, secDia:%.1f\r", numPulsos, pulsosMAX, secPorDia);
             printSerialCPP(buff);
         }
     }

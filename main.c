@@ -72,6 +72,7 @@ void parpadear(uint8_t numVeces, uint16_t ms) {
     palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_INPUT_ANALOG);
 }
 
+
 int main(void) {
     uint8_t estDes;
     uint32_t sec2change;

@@ -242,7 +242,6 @@ void rtcSetTM(RTCDriver *rtcp, struct tm *tim, uint16_t ds)  {
 
   rtc_exit_init(&RTCD1);
   RTCD1.rtc->WPR = 0xFF;
-
   /* Leaving a reentrant critical zone.*/
   osalSysRestoreStatusX(sts);
 }
@@ -331,7 +330,6 @@ void rtcGetTM(RTCDriver *rtcp, struct tm *tim, uint16_t *ds) {
 
 void ajustaCALMP(int16_t dsDia)
 {
-    char buff[100];
     // hay que calcular cuantos pulsos hay que enmascarar dsDia/864000*32768*32
     if (dsDia>400 || dsDia<-400)
         return;
@@ -340,18 +338,14 @@ void ajustaCALMP(int16_t dsDia)
     RTCD1.rtc->WPR = 0x53;
     if (dsDia>0) // hay que anyadir pulsos, CALP es 1
     {
+        RTCD1.rtc->CALR = (512 - pulsos2mask);
         RTCD1.rtc->CALR |= RTC_CALR_CALP;
-        RTCD1.rtc->CALR |= (512 - pulsos2mask);
     }
     else
     {
-        RTCD1.rtc->CALR  &= ~RTC_CALR_CALP;
-        RTCD1.rtc->CALR |= -pulsos2mask;
+        RTCD1.rtc->CALR = -pulsos2mask;
     }
-
     RTCD1.rtc->WPR = 0xBB;       // enable write protection
-    chsnprintf(buff,sizeof(buff),"En ajustaCALMP(%d).. CALR:%d\n\r", dsDia, RTCD1.rtc->CALR);
-    printSerialCPP(buff);
 }
 
 void ajustaCALMP_C(int16_t dsDia)
