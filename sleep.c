@@ -162,7 +162,13 @@ uint8_t stop(uint16_t nb_sec)
     // prepara despertar por timer
     wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
     wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
+
+    RTCD1.rtc->WPR = 0xCA;       // Disable write protection
+    RTCD1.rtc->WPR = 0x53;
+
     rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupspec);       // Set RTC wake-up config
+
+    RTCD1.rtc->WPR = 0xFF;
 
     chSysDisable();                               // No effect
     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;   // No effect        // Disable TickInt Request
