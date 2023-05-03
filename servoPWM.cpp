@@ -19,6 +19,7 @@ extern "C" {
 
 extern uint16_t posAbierto;
 extern uint16_t posCerrado;
+uint16_t porcPosAnterior = 50;
 
 static PWMConfig pwmcfg = {
   3125000, /* 48 MHz PWM clock frequency */
@@ -60,42 +61,78 @@ void closeServo(void)
 
 void mueveServoAncho(uint16_t ancho, uint16_t ms)
 {
-  initServo();
-  palClearPad(GPIOB, GPIOB_ONSERVO);
+//  initServo();
+//  palClearPad(GPIOB, GPIOB_ONSERVO);
   // minimo 2980, maximo 6068, medio 4529
   if (ancho<2700) ancho=2700;
   if (ancho>6500) ancho=6500;
-  if (PWMD4.state==PWM_STOP)
-      pwmStart(&PWMD4, &pwmcfg);
+//  if (PWMD4.state==PWM_STOP)
+//      pwmStart(&PWMD4, &pwmcfg);
   pwmEnableChannel(&PWMD4, 2, ancho);
   chThdSleepMilliseconds(ms);
-  closeServo();
+//  closeServo();
 }
 
-void mueveServoPos(uint16_t porcPosicion, uint16_t ms)
+void mueveServoPos(uint16_t porcPosicion)
 {
   uint16_t ancho;
+  // arranco servo
+  initServo();
+  palClearPad(GPIOB, GPIOB_ONSERVO);
+  if (PWMD4.state==PWM_STOP)
+      pwmStart(&PWMD4, &pwmcfg);
   if (porcPosicion>100) porcPosicion=100;
-  ancho = (uint16_t) (2700.0f+3800.0f*porcPosicion/100.0f);
-  mueveServoAncho(ancho, ms);
+  // si esta en la posicion, recordar durante 1500ms
+  if (porcPosicion==porcPosAnterior)
+  {
+      ancho = (uint16_t) (2700.0f+3800.0f*porcPosicion/100.0f);
+      mueveServoAncho(ancho, 1500);
+      closeServo();
+      return;
+  }
+  if (porcPosicion>porcPosAnterior)
+  {
+      for (int16_t pos=porcPosAnterior;pos<=porcPosicion;pos++)
+      {
+          ancho = (uint16_t) (2700.0f+3800.0f*pos/100.0f);
+          mueveServoAncho(ancho, 15);
+      }
+      mueveServoAncho(ancho, 500);
+      porcPosAnterior = porcPosicion;
+      closeServo();
+      return;
+
+  }
+  if (porcPosicion<porcPosAnterior)
+  {
+      for (int16_t pos=porcPosAnterior;pos>=porcPosicion;pos--)
+      {
+          ancho = (uint16_t) (2700.0f+3800.0f*pos/100.0f);
+          mueveServoAncho(ancho, 15);
+      }
+      mueveServoAncho(ancho, 500);
+      porcPosAnterior = porcPosicion;
+      closeServo();
+      return;
+  }
 }
 
 void mueveServoPosC(uint16_t porcPosicion)
 {
-    mueveServoPos(porcPosicion,1500);
+    mueveServoPos(porcPosicion);
 }
 
 void cierraPuertaC(void)
 {
     if (tensionCritica())
         return;
-    uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
-    mueveServoPos(posIntermedia,1000);
-    chThdSleepMilliseconds(1500);
-    mueveServoPos(posCerrado,1500);
+//    uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
+//    mueveServoPos(posIntermedia,1000);
+//    chThdSleepMilliseconds(1500);
+    mueveServoPos(posCerrado);
 }
 
 void abrePuertaC(void)
 {
-    mueveServoPos(posAbierto,1500);
+    mueveServoPos(posAbierto);
 }

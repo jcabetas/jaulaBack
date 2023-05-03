@@ -29,7 +29,7 @@ void ajustaP(uint16_t porcP);
 uint8_t ajustaHoraDetallada(uint16_t ano, uint8_t mes, uint8_t dia, uint8_t hora, uint8_t min, uint8_t sec);
 void diSecAmanecerAnochecer(uint16_t *secActual, uint16_t *secAmanecer, uint16_t *secAnochecer);
 void estadoDeseadoPuertaC(uint8_t *estDes, uint16_t *sec2change);
-void mueveServoPos(uint16_t porcPosicion, uint16_t ms);
+void mueveServoPos(uint16_t porcPosicion);
 void leeTension(float *vBat);
 bool tensionCritica(void);
 float hallaCapBat(float *vBat);
@@ -120,9 +120,9 @@ void ajustaPuerta(void)
           escribeVariables();
           calendar::estadoDeseadoPuerta(&estDes, &sec2change);
           if (estDes == 1)
-              mueveServoPos(posAbierto,1500);
+              mueveServoPos(posAbierto);
           else
-              mueveServoPos(posCerrado, 1500);
+              mueveServoPos(posCerrado);
           break;
         }
     }
@@ -168,9 +168,9 @@ void ajustaPosiciones(void)
         }
         calendar::estadoDeseadoPuerta(&estDes, &sec2change);
         if (estDes == 1)
-            mueveServoPos(posAbierto, 1500);
+            mueveServoPos(posAbierto);
         else
-            mueveServoPos(posCerrado, 1500);
+            mueveServoPos(posCerrado);
     }
 }
 
