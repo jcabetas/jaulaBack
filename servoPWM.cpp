@@ -9,7 +9,6 @@
 
 #include "hal.h"
 #include "chprintf.h"
-//#include "alimCalle.h"
 
 extern "C" {
     void mueveServoPosC(uint16_t porcPosicion);
@@ -46,7 +45,6 @@ void initServo(void)
  *   Salida servo: TIM4CH3 (PB8)
  */
     palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
-//    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_PUSHPULL);
     palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_OPENDRAIN);
     palSetPad(GPIOB, GPIOB_ONSERVO);
 	pwmStart(&PWMD4, &pwmcfg);
@@ -61,16 +59,11 @@ void closeServo(void)
 
 void mueveServoAncho(uint16_t ancho, uint16_t ms)
 {
-//  initServo();
-//  palClearPad(GPIOB, GPIOB_ONSERVO);
   // minimo 2980, maximo 6068, medio 4529
   if (ancho<2700) ancho=2700;
   if (ancho>6500) ancho=6500;
-//  if (PWMD4.state==PWM_STOP)
-//      pwmStart(&PWMD4, &pwmcfg);
   pwmEnableChannel(&PWMD4, 2, ancho);
   chThdSleepMilliseconds(ms);
-//  closeServo();
 }
 
 void mueveServoPos(uint16_t porcPosicion)
@@ -126,9 +119,9 @@ void cierraPuertaC(void)
 {
     if (tensionCritica())
         return;
-//    uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
-//    mueveServoPos(posIntermedia,1000);
-//    chThdSleepMilliseconds(1500);
+    uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
+    mueveServoPos(posIntermedia);
+    chThdSleepMilliseconds(1500);
     mueveServoPos(posCerrado);
 }
 
