@@ -88,6 +88,9 @@ int main(void) {
         secAdaptacion = 0;
     hayGps = 1; // supongo que hay GPS
     printSerial("Inicializado\n\r");
+    abrePuertaC();
+    chThdSleepMilliseconds(2000);
+    cierraPuertaC();
     while (1 == 1) {
         leeVariablesC();
         leeGPS();
