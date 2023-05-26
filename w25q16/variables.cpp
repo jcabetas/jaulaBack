@@ -56,7 +56,7 @@ void reseteaEEprom(void)
 {
   W25Q16_sectorErase(0);
   W25Q16_write_i16(0, POS_ADDAMANECER, 30);
-  W25Q16_write_i16(0, POS_ADDATARDECER, 30);
+  W25Q16_write_i16(0, POS_ADDATARDECER, -30);
   W25Q16_write_u16(0, POS_AUTOPUERTA, 2);
   W25Q16_write_i16(0, POS_DSADDPORDIA, 0);
   W25Q16_write_u16(0, POS_POSABIERTO, 95);

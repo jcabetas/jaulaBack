@@ -38,6 +38,11 @@ uint8_t startGPS(void);
 void calibraConGPS(uint8_t soloCheck);
 uint8_t stopGPS(void);
 
+extern "C" {
+    void cierraPuertaC(void);
+    void abrePuertaC(void);
+}
+
 extern uint8_t hayGps;
 
 extern int16_t addAmanecer;
@@ -120,9 +125,9 @@ void ajustaPuerta(void)
           escribeVariables();
           calendar::estadoDeseadoPuerta(&estDes, &sec2change);
           if (estDes == 1)
-              mueveServoPos(posAbierto);
+              abrePuertaC();//mueveServoPos(posAbierto);
           else
-              mueveServoPos(posCerrado);
+              cierraPuertaC();//mueveServoPos(posCerrado);
           break;
         }
     }

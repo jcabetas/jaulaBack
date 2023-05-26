@@ -129,3 +129,8 @@ void abrePuertaC(void)
 {
     mueveServoPos(posAbierto);
 }
+
+void cierraPuerta(void)
+{
+    cierraPuertaC();
+}
