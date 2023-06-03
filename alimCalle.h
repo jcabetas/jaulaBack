@@ -27,9 +27,10 @@ void leeVariablesC(void);
 void printFechaC(char *buff, uint16_t longBuff);
 void addDsC(int16_t dsAdd);
 void printSerial(char *msg);
-void opciones(void);
 void cierraPuertaC(void);
 void abrePuertaC(void);
+void opciones(void);
+void abrePuertaHastaA1C(void);
 void calibraConGPS(void);
 void ajustaCALMP_C(int16_t dsDia);
 

@@ -224,7 +224,7 @@
  */
 
 #define LINE_A0_KEY                 PAL_LINE(GPIOA, 0U)
-#define LINE_A1_SENS1               PAL_LINE(GPIOA, 1U)
+#define LINE_A1_SENS2               PAL_LINE(GPIOA, 1U)
 #define LINE_A2_TX2                 PAL_LINE(GPIOA, 2U)
 #define LINE_A3_RX2                 PAL_LINE(GPIOA, 3U)
 #define LINE_A4_W25Q16_CS           PAL_LINE(GPIOA, 4U)

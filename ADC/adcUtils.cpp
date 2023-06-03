@@ -54,7 +54,7 @@ static const ADCConversionGroup adcgrpcfg1 = {
   0,                        /* CR1 */
   ADC_CR2_SWSTART,          /* CR2 */
   0,                        /* SMPR1 */
-  ADC_SMPR2_SMP_AN9(ADC_SAMPLE_480), /* SMPR2 */
+  ADC_SMPR2_SMP_AN8(ADC_SAMPLE_480), /* SMPR2 */
   0,                        /* HTR */
   0,                        /* LTR */
   0,                        /* SQR1 */
@@ -71,17 +71,16 @@ void leeTension(float *vBat)
     palClearPad(GPIOB, GPIOB_ONAD);
     palSetPadMode(GPIOB, GPIOB_VBAT, PAL_MODE_INPUT_ANALOG); // B0 medida de bateria
     chThdSleepMilliseconds(10);
-    // hay que leer dos veces, la primera tiene error importante
     adcStart(&ADCD1,NULL);
-	adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
     adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
     adcStop(&ADCD1);
 
-    *vBat = samples_buf[0]*0.00113891682f*(1.0f+incAdPormil/1000.0f);
+    *vBat = samples_buf[0]*0.00113919414f*(1.0f+incAdPormil/1000.0f);
     palSetPad(GPIOB, GPIOB_ONAD);
     chThdSleepMilliseconds(1);
     palSetPadMode(GPIOB, GPIOB_ONAD,PAL_MODE_INPUT_ANALOG);
 }
+
 
 bool tensionCritica(void)
 {

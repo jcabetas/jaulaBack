@@ -21,6 +21,12 @@ void cb_external_input_wake_up(void *arg)
   GL_Flag_External_WakeUp = 1;                                  // Set Flag fo  palSetPadMode(GPIOC, GPIOC_LED, PAL_MODE_OUTPUT_PUSHPULL);
 }
 
+void cb_external_input_wake_upA1(void *arg)
+{
+  (void)arg;
+  GL_Flag_External_WakeUp = 2;
+}
+
 void ports_set_normal(void)
 {
   palSetLineMode(LINE_A0_KEY,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
@@ -35,7 +41,7 @@ void ports_set_lowpower(void)
   /* Set all I/O pins to Analog inputs */
   for(uint8_t i = 0; i < 16; i++ )
    {
-       if (i!=LINE_A0_KEY && i!=GPIOA_W25Q16_CS)// && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK )   // && i!=GPIOA_TX2 && i!=GPIOA_RX2)
+       if (i!=GPIOA_W25Q16_CS)// && i!=LINE_GPIOA_SWDIO && i!=LINE_GPIOA_SWCLK )   // && i!=GPIOA_TX2 && i!=GPIOA_RX2)
          palSetPadMode( GPIOA, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOB, i,PAL_MODE_INPUT_ANALOG );
        palSetPadMode( GPIOC, i,PAL_MODE_INPUT_ANALOG );
@@ -44,6 +50,7 @@ void ports_set_lowpower(void)
        palSetPadMode( GPIOH, ( i % 2 ),PAL_MODE_INPUT_ANALOG );
    }
   palSetLineMode(LINE_A0_KEY,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+  palSetLineMode(LINE_A1_SENS2,PAL_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 
   palSetPad(GPIOA, GPIOA_W25Q16_CS);
   palSetPadMode(GPIOA, GPIOA_W25Q16_CS, PAL_MODE_OUTPUT_PUSHPULL);
@@ -159,6 +166,10 @@ uint8_t stop(uint16_t nb_sec)
     palEnableLineEvent(LINE_A0_KEY, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
     palSetLineCallback(LINE_A0_KEY, cb_external_input_wake_up, NULL); // Active callback
 
+    // hago igual con A1 LINE_A1_SENS1
+    palEnableLineEvent(LINE_A1_SENS2, PAL_EVENT_MODE_FALLING_EDGE);     // Falling edge creates event
+    palSetLineCallback(LINE_A1_SENS2, cb_external_input_wake_upA1, NULL); // Active callback
+
     // prepara despertar por timer
     wakeupspec.wutr = ( (uint32_t)4 ) << 16; //antes 4             // bits 16-18 = WUCKSel : Select 1 Hz clk
     wakeupspec.wutr |= nb_sec - 1;                        // bits 0-15  = WUT : Period = x+1 sec
@@ -208,6 +219,7 @@ uint8_t stop(uint16_t nb_sec)
 
     SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;    // No effect          // Enable TickInt Request
     palDisableLineEvent(LINE_A0_KEY);
+    palDisableLineEvent(LINE_A1_SENS2);
 
     //ports_set_normal();
     return wakeup_source;

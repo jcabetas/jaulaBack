@@ -77,7 +77,6 @@ int main(void) {
     uint8_t estDes;
     uint32_t sec2change;
     char buffer[90], buff[50];
-
     halInit();
     chSysInit();
     initSerial();
@@ -91,6 +90,7 @@ int main(void) {
     abrePuertaC();
     chThdSleepMilliseconds(2000);
     cierraPuertaC();
+
     while (1 == 1) {
         leeVariablesC();
         leeGPS();
@@ -115,7 +115,11 @@ int main(void) {
             parpadear(1, 100);
             printSerial("Timeout desde stop\n\r");
         }
-        else
+        else if (GL_Flag_External_WakeUp == 1) {
             opciones();
+        }
+        else if (GL_Flag_External_WakeUp == 2) {
+            abrePuertaHastaA1C();
+        }
     }
 }

@@ -14,7 +14,9 @@ extern "C" {
     void mueveServoPosC(uint16_t porcPosicion);
     void cierraPuertaC(void);
     void abrePuertaC(void);
+    void abrePuertaHastaA1C(void);
 }
+void printSerialCPP(const char *msg);
 
 extern uint16_t posAbierto;
 extern uint16_t posCerrado;
@@ -133,4 +135,19 @@ void abrePuertaC(void)
 void cierraPuerta(void)
 {
     cierraPuertaC();
+}
+
+
+void abrePuertaHastaA1C(void)
+{
+    printSerialCPP("Apretado A1, abro puerta\n\r");
+    mueveServoPos(posAbierto);
+    // espera a dejar de pulsar A1 para salir, con 120s de timeout
+    for (uint16_t ds=0;ds<1200;ds++)
+    {
+        if (palReadPad(GPIOA, GPIOA_SENS2))
+            return;
+        chThdSleepMilliseconds(100);
+    }
+    return;
 }
