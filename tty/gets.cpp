@@ -132,11 +132,17 @@ void chgetsNoEchoTimeOut(BaseChannel   *tty, uint8_t *buffer, uint16_t size,syst
 {
     uint8_t ch,ch1,ch2;
     int pos=0;
+    uint16_t numCarsReceived = 0;
     while (pos<size)
       {
       ch = chgetchTimeOut(tty, timeout, huboTimeout);
       if (*huboTimeout) // timeout
          break;
+      if (++numCarsReceived>size)
+      {
+          *huboTimeout = 1;
+          break;
+      }
       if (ch=='\n' || ch=='\r')
          {
             streamPut(tty, (uint8_t)ch);
