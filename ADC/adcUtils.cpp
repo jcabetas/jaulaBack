@@ -67,18 +67,17 @@ extern int16_t incAdPormil;
 /* Lee tension */
 void leeTension(float *vBat)
 {
-    palSetPadMode(GPIOB, GPIOB_ONAD, PAL_MODE_OUTPUT_OPENDRAIN);
-    palClearPad(GPIOB, GPIOB_ONAD);
+    palSetPadMode(GPIOB, GPIOB_ONAD, PAL_MODE_OUTPUT_PUSHPULL);
+    ACTIVAPAD(GPIOB, GPIOB_ONAD);
     palSetPadMode(GPIOB, GPIOB_VBAT, PAL_MODE_INPUT_ANALOG); // B0 medida de bateria
     chThdSleepMilliseconds(10);
     adcStart(&ADCD1,NULL);
     adcConvert(&ADCD1, &adcgrpcfg1, &samples_buf[0], ADC_GRP1_BUF_DEPTH);
     adcStop(&ADCD1);
-
     *vBat = samples_buf[0]*0.00113919414f*(1.0f+incAdPormil/1000.0f);
-    palSetPad(GPIOB, GPIOB_ONAD);
+    QUITAPAD(GPIOB, GPIOB_ONAD);
     chThdSleepMilliseconds(1);
-    palSetPadMode(GPIOB, GPIOB_ONAD,PAL_MODE_INPUT_ANALOG);
+//    palSetPadMode(GPIOB, GPIOB_ONAD,PAL_MODE_INPUT_ANALOG);
 }
 
 

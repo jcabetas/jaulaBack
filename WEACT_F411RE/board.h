@@ -60,6 +60,16 @@
  */
 #define STM32F411xE
 
+#define ALIMV7
+
+#ifdef ALIMV7
+#define ACTIVAPAD palSetPad
+#define QUITAPAD  palClearPad
+#else
+#define ACTIVAPAD palClearPad
+#define QUITAPAD  palSetPad
+#endif
+
 /*
  * IO pins assignments.
  */

@@ -643,10 +643,10 @@
 <attribute name="NAME" x="0" y="32.766" size="1.27" layer="25" ratio="10"/>
 </element>
 <element name="R9" library="rcl" package="R1206" value="33k" x="10.668" y="40.64" smashed="yes">
-<attribute name="VALUE" x="8.382" y="38.608" size="0.8128" layer="27"/>
+<attribute name="VALUE" x="10.922" y="35.052" size="0.8128" layer="27"/>
 </element>
 <element name="R10" library="rcl" package="R1206" value="300" x="10.668" y="37.084" smashed="yes" rot="R180">
-<attribute name="VALUE" x="12.7" y="35.306" size="0.8128" layer="27" rot="R180"/>
+<attribute name="VALUE" x="13.462" y="39.37" size="0.8128" layer="27" rot="R180"/>
 </element>
 </elements>
 <signals>

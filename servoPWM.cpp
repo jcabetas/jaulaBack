@@ -47,15 +47,15 @@ void initServo(void)
  *   Salida servo: TIM4CH3 (PB8)
  */
     palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_ALTERNATE(2) | PAL_STM32_OSPEED_HIGHEST);
-    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_OPENDRAIN);
-    palSetPad(GPIOB, GPIOB_ONSERVO);
+    palSetPadMode(GPIOB, GPIOB_ONSERVO, PAL_MODE_OUTPUT_PUSHPULL);
+    ACTIVAPAD(GPIOB, GPIOB_ONSERVO);
 	pwmStart(&PWMD4, &pwmcfg);
 }
 
 void closeServo(void)
 {
     palSetPadMode(GPIOB, GPIOB_PWMSERVO,PAL_MODE_INPUT_ANALOG );
-    palSetPad(GPIOB, GPIOB_ONSERVO);
+    QUITAPAD(GPIOB, GPIOB_ONSERVO);
     pwmStop(&PWMD4);
 }
 
@@ -73,7 +73,7 @@ void mueveServoPos(uint16_t porcPosicion)
   uint16_t ancho;
   // arranco servo
   initServo();
-  palClearPad(GPIOB, GPIOB_ONSERVO);
+  ACTIVAPAD(GPIOB, GPIOB_ONSERVO);
   if (PWMD4.state==PWM_STOP)
       pwmStart(&PWMD4, &pwmcfg);
   if (porcPosicion>100) porcPosicion=100;

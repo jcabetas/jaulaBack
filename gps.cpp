@@ -145,7 +145,7 @@ uint8_t startGPS(void)
     uint8_t huboTimeout;
     printSerialCPP("Conecto GPS...\n\r");
     palSetPadMode(GPIOB, GPIOB_ONGPS, PAL_MODE_OUTPUT_PUSHPULL);
-    palClearPad(GPIOB, GPIOB_ONGPS);
+    ACTIVAPAD(GPIOB, GPIOB_ONGPS);
     palSetPad(GPIOA, GPIOA_RX1);
     palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_ALTERNATE(7));
     sdStart(&SD1, &ser_cfg);
@@ -161,7 +161,7 @@ uint8_t startGPS(void)
 
 void stopGPS(void)
 {
-    palSetPad(GPIOB, GPIOB_ONGPS);
+    QUITAPAD(GPIOB, GPIOB_ONGPS);
     sdStop(&SD1);
     palSetPadMode(GPIOA, GPIOA_RX1, PAL_MODE_INPUT_ANALOG);
 }

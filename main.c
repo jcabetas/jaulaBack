@@ -90,7 +90,6 @@ int main(void) {
     abrePuertaC();
     chThdSleepMilliseconds(2000);
     cierraPuertaC();
-
     while (1 == 1) {
         leeVariablesC();
         leeGPS();
