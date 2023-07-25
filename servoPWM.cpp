@@ -121,6 +121,12 @@ void cierraPuertaC(void)
 {
     if (tensionCritica())
         return;
+    if (posCerrado==porcPosAnterior)
+    {
+        // recuerda posicion
+        mueveServoPos(posCerrado);
+        return;
+    }
     uint16_t posIntermedia = posAbierto + ((posCerrado - posAbierto)>>2);
     mueveServoPos(posIntermedia);
     chThdSleepMilliseconds(1500);
@@ -140,10 +146,16 @@ void cierraPuerta(void)
 
 void abrePuertaHastaA1C(void)
 {
-    printSerialCPP("Apretado A1, abro puerta\n\r");
+    printSerialCPP("Cerrado sensor\n\r");
+    chThdSleepMilliseconds(200);  // compruebo que no es esporadico (p.e. vibracion en sensor)
+    if (palReadPad(GPIOA, GPIOA_SENS2))
+    {
+        printSerialCPP("Era falso, no hago nada\n\r");
+        return;
+    }
     mueveServoPos(posAbierto);
-    // espera a dejar de pulsar A1 para salir, con 120s de timeout
-    for (uint16_t ds=0;ds<1200;ds++)
+    // espera a dejar de pulsar A1 para salir, con 10 minutos de timeout
+    for (uint16_t ds=0;ds<6000;ds++)
     {
         if (palReadPad(GPIOA, GPIOA_SENS2))
             return;
