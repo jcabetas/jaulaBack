@@ -1,3 +1,3 @@
 #include "version.h"
 
-char const *const GIT_COMMIT = "a7f11ef-dirty";
+char const *const GIT_COMMIT = "2d0de35-dirty";
