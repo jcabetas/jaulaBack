@@ -103,7 +103,6 @@ void ajustaPuerta(void)
     int16_t opcion;
     uint8_t estDes;
     uint32_t sec2change;
-    chprintf((BaseSequentialStream *)&SD2,"Version GIT: %s\n\r",GIT_COMMIT);
     chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaAutoStr[autoPuerta]);
     uint16_t autoPuertaOld = autoPuerta;
     while (1==1)
@@ -342,6 +341,7 @@ void opciones(void)
         float porcBat = hallaCapBat(&vBat);
         calendar::rtcGetFecha();
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
+        chprintf((BaseSequentialStream *)&SD2,"Version GIT: %s\n\r",GIT_COMMIT);
         calendar::printFecha(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
         calendar::printHoras(buff,sizeof(buff));
