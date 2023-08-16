@@ -3,7 +3,7 @@
 # NOTE: Can be overridden externally.
 #
 
-$(shell echo "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git describe --always --dirty --match 'NOT A TAG')\";" > version.cpp.tmp; if diff -q version.cpp.tmp version.cpp >/dev/null 2>&1; then rm version.cpp.tmp; else mv version.cpp.tmp version.cpp; fi)
+$(shell echo "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git describe --always --dirty --match 'NOT A TAG')\";\nchar const *const GIT_TAG = \"$$(git tag)\";" > version.cpp.tmp; if diff -q version.cpp.tmp version.cpp >/dev/null 2>&1; then rm version.cpp.tmp; else mv version.cpp.tmp version.cpp; fi)
 
 # Compiler options here.
 ifeq ($(USE_OPT),)

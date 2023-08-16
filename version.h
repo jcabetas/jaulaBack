@@ -10,5 +10,6 @@
 #define VERSION_H_
 
 extern char const *const GIT_COMMIT;
+extern char const *const GIT_TAG;
 
 #endif /* VERSION_H_ */

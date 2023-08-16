@@ -341,7 +341,7 @@ void opciones(void)
         float porcBat = hallaCapBat(&vBat);
         calendar::rtcGetFecha();
         chprintf((BaseSequentialStream *)&SD2,"\n\r");
-        chprintf((BaseSequentialStream *)&SD2,"Version GIT: %s\n\r",GIT_COMMIT);
+        chprintf((BaseSequentialStream *)&SD2,"GIT Tag:%s Commit:%s\n\r",GIT_TAG,GIT_COMMIT);
         calendar::printFecha(buff,sizeof(buff));
         chprintf((BaseSequentialStream *)&SD2,"Fecha actual UTC: %s\n\r",buff);
         calendar::printHoras(buff,sizeof(buff));
