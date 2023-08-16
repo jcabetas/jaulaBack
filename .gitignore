@@ -4,3 +4,4 @@
 *.d
 *.lst
 *.elf
+/version.cpp
