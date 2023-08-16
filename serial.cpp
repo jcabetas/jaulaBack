@@ -17,6 +17,7 @@ using namespace chibios_rt;
 #include "calendarUTC.h"
 #include <w25q16/w25q16.h>
 #include "variables.h"
+#include "version.h"
 
 extern "C" {
     void initSerial(void);
@@ -102,6 +103,7 @@ void ajustaPuerta(void)
     int16_t opcion;
     uint8_t estDes;
     uint32_t sec2change;
+    chprintf((BaseSequentialStream *)&SD2,"Version GIT: %s\n\r",GIT_COMMIT);
     chprintf((BaseSequentialStream *)&SD2,"Estado de la puerta: %s\n\r",estPuertaAutoStr[autoPuerta]);
     uint16_t autoPuertaOld = autoPuerta;
     while (1==1)

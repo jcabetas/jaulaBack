@@ -3,6 +3,8 @@
 # NOTE: Can be overridden externally.
 #
 
+$(shell echo "#include \"version.h\"\n\nchar const *const GIT_COMMIT = \"$$(git describe --always --dirty --match 'NOT A TAG')\";" > version.cpp.tmp; if diff -q version.cpp.tmp version.cpp >/dev/null 2>&1; then rm version.cpp.tmp; else mv version.cpp.tmp version.cpp; fi)
+
 # Compiler options here.
 ifeq ($(USE_OPT),)
   USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16 -lm
@@ -132,7 +134,7 @@ CSRC = $(ALLCSRC) \
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CPPSRC = $(ALLCPPSRC) calendarUTC/calendarUTC.cpp calendarUTC/rtcV2UTC.cpp gps.cpp tty/gets.cpp serial.cpp \
- 					  w25q16/w25q16.cpp w25q16/variables.cpp  servoPWM.cpp  ADC/adcUtils.cpp timer.cpp
+ 					  w25q16/w25q16.cpp w25q16/variables.cpp  servoPWM.cpp  ADC/adcUtils.cpp timer.cpp version.cpp
 #        \
          w25q16/w25q16.cpp w25q16/varsGestion.cpp w25q16/volcarFlash.cpp \
          SMS/sms.cpp SMS/manejaAT.cpp SMS/sim800.cpp  SMS/procesaOrden.cpp SMS/threadSMS.cpp \
